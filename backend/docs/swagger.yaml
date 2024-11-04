@@ -1,0 +1,35 @@
+basePath: /
+definitions:
+  models.EventResponse:
+    properties:
+      hello:
+        example: world
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    name: API Support
+    url: http://www.example.com/support
+  description: This is a sample server for Time Capsule Memories.
+  license:
+    name: MIT
+  title: Time Capsule Memories API
+  version: "1.0"
+paths:
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of events
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.EventResponse'
+      summary: Get events
+      tags:
+      - events
+swagger: "2.0"

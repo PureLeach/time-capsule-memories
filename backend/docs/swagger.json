@@ -1,0 +1,53 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server for Time Capsule Memories.",
+        "title": "Time Capsule Memories API",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.example.com/support"
+        },
+        "license": {
+            "name": "MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8000",
+    "basePath": "/",
+    "paths": {
+        "/events": {
+            "get": {
+                "description": "Get a list of events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.EventResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.EventResponse": {
+            "type": "object",
+            "properties": {
+                "hello": {
+                    "type": "string",
+                    "example": "world"
+                }
+            }
+        }
+    }
+}
