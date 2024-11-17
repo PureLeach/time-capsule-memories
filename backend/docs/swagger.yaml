@@ -1,0 +1,95 @@
+basePath: /
+definitions:
+  models.CapsuleResponse:
+    properties:
+      created_at:
+        type: string
+      files_folder_uuid:
+        type: string
+      id:
+        type: integer
+      message:
+        type: string
+      recipient_email:
+        type: string
+      recipient_tg_username:
+        type: string
+      send_at:
+        type: string
+      sender_name:
+        type: string
+    type: object
+  models.CreateCapsule:
+    properties:
+      files_folder_uuid:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      message:
+        example: Test Message
+        type: string
+      recipient_email:
+        example: test@example.com
+        type: string
+      recipient_tg_username:
+        example: testuser
+        type: string
+      send_at:
+        example: "2024-11-18"
+        type: string
+      sender_name:
+        example: John Doe
+        type: string
+    required:
+    - message
+    - recipient_email
+    - recipient_tg_username
+    - send_at
+    - sender_name
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact:
+    name: API Support
+    url: http://www.example.com/support
+  description: This is a sample server for Time Capsule Memories.
+  license:
+    name: MIT
+  title: Time Capsule Memories API
+  version: "1.0"
+paths:
+  /capsules:
+    post:
+      consumes:
+      - application/json
+      description: Создает новое событие с заданными параметрами
+      parameters:
+      - description: Данные для создания события
+        in: body
+        name: capsule
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateCapsule'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешно создано событие
+          schema:
+            $ref: '#/definitions/models.CapsuleResponse'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Не удалось создать событие
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Создать новое событие
+      tags:
+      - capsules
+swagger: "2.0"

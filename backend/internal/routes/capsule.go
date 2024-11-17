@@ -7,6 +7,6 @@ import (
 )
 
 func RegisterRoutes(e *echo.Echo) {
-	// e.GET("/events", handlers.GetEvents)
-	e.POST("/events", handlers.CreateEvent)
+	// e.GET("/capsules", handlers.GetCapsules)
+	e.POST("/capsules", handlers.CreateCapsule)
 }

@@ -1,0 +1,140 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server for Time Capsule Memories.",
+        "title": "Time Capsule Memories API",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.example.com/support"
+        },
+        "license": {
+            "name": "MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8000",
+    "basePath": "/",
+    "paths": {
+        "/capsules": {
+            "post": {
+                "description": "Создает новое событие с заданными параметрами",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "capsules"
+                ],
+                "summary": "Создать новое событие",
+                "parameters": [
+                    {
+                        "description": "Данные для создания события",
+                        "name": "capsule",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCapsule"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешно создано событие",
+                        "schema": {
+                            "$ref": "#/definitions/models.CapsuleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось создать событие",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.CapsuleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "files_folder_uuid": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "recipient_email": {
+                    "type": "string"
+                },
+                "recipient_tg_username": {
+                    "type": "string"
+                },
+                "send_at": {
+                    "type": "string"
+                },
+                "sender_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateCapsule": {
+            "type": "object",
+            "required": [
+                "message",
+                "recipient_email",
+                "recipient_tg_username",
+                "send_at",
+                "sender_name"
+            ],
+            "properties": {
+                "files_folder_uuid": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Test Message"
+                },
+                "recipient_email": {
+                    "type": "string",
+                    "example": "test@example.com"
+                },
+                "recipient_tg_username": {
+                    "type": "string",
+                    "example": "testuser"
+                },
+                "send_at": {
+                    "type": "string",
+                    "example": "2024-11-18"
+                },
+                "sender_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                }
+            }
+        },
+        "models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
