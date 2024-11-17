@@ -16,3 +16,10 @@ docs_generation:
 
 clean:
 	go clean -cache && go clean -modcache
+
+
+executable_scripts:
+	chmod +x db_setup.sh migrate.sh
+
+migrate:
+	./migrate.sh
