@@ -1,3 +1,5 @@
+include .env
+
 build:
 	go build -o bin/time_capsule_memories ./cmd/main.go
 
@@ -19,7 +21,12 @@ clean:
 
 
 executable_scripts:
-	chmod +x db_setup.sh migrate.sh
+	cd scripts && chmod +x db_setup.sh migrate.sh
 
-migrate:
-	./migrate.sh
+
+migrate_up:
+	goose -dir ./migrations postgres ${DATABASE_URL} up
+
+
+migrate_down:
+	goose -dir ./migrations postgres ${DATABASE_URL} down

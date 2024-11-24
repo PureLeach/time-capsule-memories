@@ -1,4 +1,5 @@
--- migrations/202311050001_create_capsules_table.up.sql
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE capsules (
     id SERIAL PRIMARY KEY,
     sender_name VARCHAR(100) NOT NULL,
@@ -9,3 +10,9 @@ CREATE TABLE capsules (
     recipient_tg_username VARCHAR(50),
     files_folder_UUID UUID
 );
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE capsules;
+-- +goose StatementEnd

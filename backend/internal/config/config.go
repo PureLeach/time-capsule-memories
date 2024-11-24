@@ -6,7 +6,7 @@ import (
 
 // Config содержит настройки подключения к базе данных
 type Config struct {
-	DBName   string `env:"POSTGRES_DB" env-default:"time_capsule"`
+	DBName   string `env:"POSTGRES_DB_NAME" env-default:"time_capsule"`
 	User     string `env:"POSTGRES_USER" env-default:"user"`
 	Password string `env:"POSTGRES_PASSWORD" env-default:"password"`
 	Host     string `env:"POSTGRES_HOST" env-default:"localhost"`
