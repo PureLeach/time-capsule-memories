@@ -51,8 +51,10 @@ func ValidateCapsule(capsule models.CreateCapsuleRequest) error {
 			return errors.New("invalid field `send_at` - Дата должна быть в формате YYYY-MM-DD")
 		case "future_date":
 			return errors.New("invalid field `send_at` - Дата должна быть больше текущей")
-		case "uuid_or_null":
-			return errors.New("invalid field `files_folder_uuid` - Поле должно быть валидным UUID или null")
+		case "max":
+			if ve.Field() == "Message" {
+				return errors.New("invalid field `message` - Сообщение не может превышать 4096 символов")
+			}
 		default:
 			return errors.New("Некорректное значение в поле " + ve.Field())
 		}

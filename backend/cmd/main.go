@@ -24,28 +24,18 @@ import (
 )
 
 func main() {
+	// Инициализация базы данных
 	if err := database.Connect(); err != nil {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	defer database.Close()
 
+	// Инициализация MinIO
 	minio_client.MinioInit()
 
 	// Создаем экземпляр Echo
 	e := echo.New()
-	e.Logger.SetLevel(0) // Установите уровень логирования на Debug
-
-	// Передаем конфигурацию и minioClient в контекст Echo
-	// e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-	// 	return func(c echo.Context) error {
-	// 		c.Set("cfg", &cfg)                // Передаем указатель на cfg
-	// 		c.Set("minioClient", minioClient) // Передаем minioClient
-	// 		return next(c)
-	// 	}
-	// })
-
-	// Регистрируем middleware
-	// e.Use(middleware.DBConnectionCheckMiddleware)
+	e.Logger.SetLevel(0)
 
 	// Регистрируем обработчики
 	routes.FileRegisterRoutes(e)
