@@ -12,7 +12,9 @@ import (
 
 var DB *pgxpool.Pool
 
-func Connect(config config.Config) error {
+func Connect() error {
+	config := config.GetConfig()
+
 	log.Println("Подключение к базе данных: " + config.PostgresURL)
 	var err error
 	DB, err = pgxpool.New(context.Background(), config.PostgresURL)
@@ -31,7 +33,6 @@ func Connect(config config.Config) error {
 	return nil
 }
 
-// Close закрывает соединение с базой данных
 func Close() {
 	if DB != nil {
 		DB.Close()

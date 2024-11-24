@@ -12,12 +12,11 @@ package main
 import (
 	"log"
 
-	"github.com/labstack/echo/v4"
-
-	"time_capsule_memories/internal/config" // Импортируйте пакет config
 	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/routes"
+
+	"github.com/labstack/echo/v4"
 
 	_ "time_capsule_memories/docs"
 
@@ -25,34 +24,32 @@ import (
 )
 
 func main() {
-	// Загружаем конфигурацию и параметры
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		log.Fatalf("Не удалось загрузить значения из переменных окружения: %v", err)
-	}
-
-	// Подключаемся к базе данных
-	if err := database.Connect(cfg); err != nil {
+	if err := database.Connect(); err != nil {
 		log.Fatalf("Ошибка подключения к базе данных: %v", err)
 	}
 	defer database.Close()
 
-	// Создание клиента и инициализация MinIO
-	minioClient, err := minio_client.MinioClient(cfg)
-	if err != nil {
-		log.Fatalf("Error initializing MinIO client: %v", err)
-	}
-	minio_client.MinioInit(minioClient, cfg.MinioBucketName)
+	minio_client.MinioInit()
 
 	// Создаем экземпляр Echo
 	e := echo.New()
 	e.Logger.SetLevel(0) // Установите уровень логирования на Debug
 
+	// Передаем конфигурацию и minioClient в контекст Echo
+	// e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+	// 	return func(c echo.Context) error {
+	// 		c.Set("cfg", &cfg)                // Передаем указатель на cfg
+	// 		c.Set("minioClient", minioClient) // Передаем minioClient
+	// 		return next(c)
+	// 	}
+	// })
+
 	// Регистрируем middleware
 	// e.Use(middleware.DBConnectionCheckMiddleware)
 
 	// Регистрируем обработчики
-	routes.RegisterRoutes(e)
+	routes.FileRegisterRoutes(e)
+	routes.CapsuleRegisterRoutes(e)
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.Logger.Infof("Запуск сервера на порту :8000")

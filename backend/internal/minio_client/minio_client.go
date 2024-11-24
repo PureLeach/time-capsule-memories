@@ -4,27 +4,47 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
+	"time"
 	"time_capsule_memories/internal/config"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-func MinioClient(config config.Config) (*minio.Client, error) {
-	client, err := minio.New(config.MinioEndpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(config.MinioAccessKey, config.MinioSecretKey, ""),
-		Secure: config.MinioUseSSL,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize MinIO client: %w", err)
-	}
+var (
+	minioClientInstance *minio.Client
+	once                sync.Once
+)
 
-	log.Printf("MinIO client initialized, endpoint: %s", config.MinioEndpoint)
-	return client, nil
+// Получаем Singleton экземпляр MinIO клиента
+func GetMinioClient() (*minio.Client, error) {
+	// Используем sync.Once для гарантии, что клиент создается только один раз
+	once.Do(func() {
+		var err error
+		minioClientInstance, err = minio.New(config.GetConfig().MinioEndpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(config.GetConfig().MinioAccessKey, config.GetConfig().MinioSecretKey, ""),
+			Secure: config.GetConfig().MinioUseSSL,
+		})
+		if err != nil {
+			log.Fatalf("Ошибка инициализации MinIO клиента: %v", err)
+		}
+
+		log.Printf("MinIO клиент инициализирован, endpoint: %s", config.GetConfig().MinioEndpoint)
+	})
+
+	return minioClientInstance, nil
 }
 
-func MinioInit(minioClient *minio.Client, bucketName string) {
-	_, err := minioClient.ListBuckets(context.Background())
+// Инициализация MinIO и создание бакета
+func MinioInit() {
+	bucketName := config.GetConfig().MinioBucketName
+	minioClient, err := GetMinioClient()
+	if err != nil {
+		log.Fatalf("Ошибка при получении MinIO клиента: %v", err)
+	}
+
+	_, err = minioClient.ListBuckets(context.Background())
 	if err != nil {
 		log.Fatalf("Ошибка подключения к MinIO: %v", err)
 	}
@@ -47,10 +67,20 @@ func MinioInit(minioClient *minio.Client, bucketName string) {
 	}
 }
 
-// func (m *MinioClient) GeneratePresignedURL(bucket, object string, expiry int64) (string, error) {
-// 	presignedURL, err := m.client.PresignedPutObject(nil, bucket, object, expiry, nil)
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return presignedURL.String(), nil
-// }
+// Генерируем presigned URL для загрузки файла в MinIO
+func GeneratePresignedUploadURL(objectName string, expiration time.Duration) (string, error) {
+	bucketName := config.GetConfig().MinioBucketName
+	ctx := context.Background()
+
+	minioClient, err := GetMinioClient()
+	if err != nil {
+		return "", fmt.Errorf("ошибка при получении MinIO клиента: %w", err)
+	}
+
+	presignedURL, err := minioClient.PresignedPutObject(ctx, bucketName, objectName, expiration)
+	if err != nil {
+		return "", fmt.Errorf("ошибка генерации presigned URL для объекта %s: %w", objectName, err)
+	}
+
+	return presignedURL.String(), nil
+}
