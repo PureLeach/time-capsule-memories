@@ -19,7 +19,7 @@ definitions:
       sender_name:
         type: string
     type: object
-  models.CreateCapsule:
+  models.CreateCapsuleRequest:
     properties:
       files_folder_uuid:
         example: 07023417-5079-429d-a113-cbef2ef164d7
@@ -51,6 +51,11 @@ definitions:
       error:
         type: string
     type: object
+  models.PresignedURLResponse:
+    properties:
+      presigned_url:
+        type: string
+    type: object
 host: localhost:8000
 info:
   contact:
@@ -73,7 +78,7 @@ paths:
         name: capsule
         required: true
         schema:
-          $ref: '#/definitions/models.CreateCapsule'
+          $ref: '#/definitions/models.CreateCapsuleRequest'
       produces:
       - application/json
       responses:
@@ -92,4 +97,34 @@ paths:
       summary: Создать новое событие
       tags:
       - capsules
+  /generate-presigned-url:
+    get:
+      consumes:
+      - application/json
+      description: Generates a presigned URL for uploading a file to MinIO in a specific
+        directory (UUID).
+      parameters:
+      - description: UUID4 directory for file upload
+        in: query
+        name: directory
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Presigned URL for file upload
+          schema:
+            $ref: '#/definitions/models.PresignedURLResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Generate a presigned URL for file upload
+      tags:
+      - file
 swagger: "2.0"

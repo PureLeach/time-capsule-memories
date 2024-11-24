@@ -41,7 +41,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.CreateCapsule"
+                            "$ref": "#/definitions/models.CreateCapsuleRequest"
                         }
                     }
                 ],
@@ -60,6 +60,50 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Не удалось создать событие",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/generate-presigned-url": {
+            "get": {
+                "description": "Generates a presigned URL for uploading a file to MinIO in a specific directory (UUID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "file"
+                ],
+                "summary": "Generate a presigned URL for file upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID4 directory for file upload",
+                        "name": "directory",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Presigned URL for file upload",
+                        "schema": {
+                            "$ref": "#/definitions/models.PresignedURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -98,7 +142,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.CreateCapsule": {
+        "models.CreateCapsuleRequest": {
             "type": "object",
             "required": [
                 "message",
@@ -138,6 +182,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PresignedURLResponse": {
+            "type": "object",
+            "properties": {
+                "presigned_url": {
                     "type": "string"
                 }
             }
