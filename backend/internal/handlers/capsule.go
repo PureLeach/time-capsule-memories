@@ -9,31 +9,18 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// // @Summary Get capsules
-// // @Description Get a list of capsules
-// // @Tags capsules
-// // @Accept json
-// // @Produce json
-// // @Success 200 {object} models.CapsuleResponse
-// // @Router /capsules [get]
-// func GetCapsules(c echo.Context) error {
-// 	response := models.CapsuleResponse{Hello: "world"}
-// 	return c.JSON(http.StatusOK, response)
-// }
-
-// CreateCapsule обрабатывает создание нового события
 // @Summary Создать новое событие
 // @Description Создает новое событие с заданными параметрами
 // @Tags capsules
 // @Accept json
 // @Produce json
-// @Param capsule body models.CreateCapsule true "Данные для создания события"
+// @Param capsule body models.CreateCapsuleRequest true "Данные для создания события"
 // @Success 201 {object} models.CapsuleResponse "Успешно создано событие"
 // @Failure 400 {object} models.ErrorResponse "Некорректные данные"
 // @Failure 500 {object} models.ErrorResponse "Не удалось создать событие"
 // @Router /capsules [post]
 func CreateCapsule(c echo.Context) error {
-	var capsule models.CreateCapsule
+	var capsule models.CreateCapsuleRequest
 
 	// Привязка данных из запроса
 	if err := c.Bind(&capsule); err != nil {

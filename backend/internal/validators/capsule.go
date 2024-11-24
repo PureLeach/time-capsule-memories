@@ -37,8 +37,8 @@ func futureDate(fl validator.FieldLevel) bool {
 	return parsedDate.After(today)
 }
 
-// ValidateCapsule выполняет валидацию модели CreateCapsule.
-func ValidateCapsule(capsule models.CreateCapsule) error {
+// ValidateCapsule выполняет валидацию модели CreateCapsuleRequest.
+func ValidateCapsule(capsule models.CreateCapsuleRequest) error {
 	err := validate.Struct(capsule)
 	if err == nil {
 		return nil
