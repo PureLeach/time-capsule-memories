@@ -20,10 +20,6 @@ clean:
 	go clean -cache && go clean -modcache
 
 
-executable_scripts:
-	cd scripts && chmod +x db_setup.sh migrate.sh
-
-
 migrate_up:
 	goose -dir ./migrations postgres ${DATABASE_URL} up
 
