@@ -16,21 +16,17 @@ import (
 
 	"time_capsule_memories/internal/config" // Импортируйте пакет config
 	"time_capsule_memories/internal/database"
+	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/routes"
 
 	_ "time_capsule_memories/docs"
 
 	echoSwagger "github.com/swaggo/echo-swagger"
-
-	"time_capsule_memories/internal/middleware" // Импортируйте пакет middleware
-	// Импортируйте пакет middleware
-	// "github.com/labstack/echo/v4"
-	// "log"
 )
 
 func main() {
-	// Загружаем конфигурацию
-	cfg, err := config.LoadConfig() // Используйте новый пакет
+	// Загружаем конфигурацию и параметры
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Не удалось загрузить значения из переменных окружения: %v", err)
 	}
@@ -41,17 +37,24 @@ func main() {
 	}
 	defer database.Close()
 
+	// Создание клиента и инициализация MinIO
+	minioClient, err := minio_client.MinioClient(cfg)
+	if err != nil {
+		log.Fatalf("Error initializing MinIO client: %v", err)
+	}
+	minio_client.MinioInit(minioClient, cfg.MinioBucketName)
+
+	// Создаем экземпляр Echo
 	e := echo.New()
 	e.Logger.SetLevel(0) // Установите уровень логирования на Debug
 
 	// Регистрируем middleware
-	e.Use(middleware.DBConnectionCheckMiddleware)
+	// e.Use(middleware.DBConnectionCheckMiddleware)
 
+	// Регистрируем обработчики
 	routes.RegisterRoutes(e)
-
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.Logger.Infof("Запуск сервера на порту :8000")
 	e.Logger.Fatal(e.Start(":8000"))
-
 }

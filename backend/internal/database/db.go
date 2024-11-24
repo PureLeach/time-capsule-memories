@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"reflect"
+	"log"
 	"time"
 	"time_capsule_memories/internal/config"
 
@@ -12,15 +12,10 @@ import (
 
 var DB *pgxpool.Pool
 
-// Connect устанавливает соединение с базой данных PostgreSQL
 func Connect(config config.Config) error {
-	// Формируем строку подключения
-	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", config.User, config.Password, config.Host, config.Port, config.DBName)
-	fmt.Printf("databaseURL: %#v Type: %v\n", databaseURL, reflect.TypeOf(databaseURL))
-
-	// Подключаемся к базе данных
+	log.Println("Подключение к базе данных: " + config.PostgresURL)
 	var err error
-	DB, err = pgxpool.New(context.Background(), databaseURL)
+	DB, err = pgxpool.New(context.Background(), config.PostgresURL)
 	if err != nil {
 		return fmt.Errorf("не удалось подключиться к базе данных: %w", err)
 	}

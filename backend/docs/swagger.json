@@ -104,7 +104,7 @@
             "properties": {
                 "files_folder_uuid": {
                     "type": "string",
-                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                    "example": "07023417-5079-429d-a113-cbef2ef164d7"
                 },
                 "message": {
                     "type": "string",
