@@ -2,10 +2,14 @@ package config
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
 )
+
+var instance *Config
+var once sync.Once
 
 type Config struct {
 	// PostgreSQL
@@ -20,26 +24,38 @@ type Config struct {
 	MinioAccessKey  string `env:"MINIO_ROOT_USER" env-default:"minioaccesskey"`
 	MinioSecretKey  string `env:"MINIO_ROOT_PASSWORD" env-default:"miniosecretkey"`
 	MinioHost       string `env:"MINIO_HOST" env-default:"localhost"`
-	MinioPort       string `env:"MINIO_ENDPOINT" env-default:"9000"`
+	MinioPort       string `env:"MINIO_PORT" env-default:"9000"`
 	MinioUseSSL     bool   `env:"MINIO_USE_SSL" env-default:"false"`
 	MinioBucketName string `env:"MINIO_BUCKET_NAME" env-default:"time-capsule"`
 	MinioEndpoint   string
 }
 
-func LoadConfig() (Config, error) {
+func LoadConfig() (*Config, error) {
 	var config Config
 
-	// Загружаем переменные из .env файла
 	if err := godotenv.Load(); err != nil {
-		return Config{}, fmt.Errorf("error loading .env file")
+		return nil, fmt.Errorf("ошибка загрузки .env файла")
 	}
 
 	if err := cleanenv.ReadEnv(&config); err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
-	// Формирование MinioEndpoint
 	config.MinioEndpoint = fmt.Sprintf("%s:%s", config.MinioHost, config.MinioPort)
 
-	return config, nil
+	return &config, nil
+}
+
+// Функция для получения конфигурации (Singleton)
+func GetConfig() *Config {
+	// Используем sync.Once для гарантии, что конфигурация будет загружена только один раз
+	once.Do(func() {
+		var err error
+		instance, err = LoadConfig()
+		if err != nil {
+			panic(fmt.Sprintf("Не удалось загрузить конфигурацию: %v", err))
+		}
+	})
+
+	return instance
 }
