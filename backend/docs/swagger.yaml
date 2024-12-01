@@ -18,6 +18,8 @@ definitions:
         type: string
       sender_name:
         type: string
+      status:
+        type: string
     type: object
   models.CreateCapsuleRequest:
     properties:
@@ -26,6 +28,7 @@ definitions:
         type: string
       message:
         example: Test Message
+        maxLength: 4096
         type: string
       recipient_email:
         example: test@example.com

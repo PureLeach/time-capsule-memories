@@ -133,6 +133,9 @@
                 },
                 "sender_name": {
                     "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -152,6 +155,7 @@
                 },
                 "message": {
                     "type": "string",
+                    "maxLength": 4096,
                     "example": "Test Message"
                 },
                 "recipient_email": {

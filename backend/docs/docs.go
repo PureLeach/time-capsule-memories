@@ -139,6 +139,9 @@ const docTemplate = `{
                 },
                 "sender_name": {
                     "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },
@@ -158,6 +161,7 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string",
+                    "maxLength": 4096,
                     "example": "Test Message"
                 },
                 "recipient_email": {

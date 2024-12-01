@@ -20,4 +20,5 @@ type CapsuleResponse struct {
 	RecipientEmail      string    `json:"recipient_email"`
 	RecipientTgUsername string    `json:"recipient_tg_username"`
 	FilesFolderUUID     *string   `json:"files_folder_uuid"`
+	Status              string    `json:"status"`
 }
