@@ -26,6 +26,8 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
 
@@ -41,6 +43,22 @@ services:
     volumes:
       - minio_data:/data
 
+  # Working only for tests and local development
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: always
+    environment:
+      - MH_STORAGE=maildir
+      - MH_HTTP_BIND_ADDR=0.0.0.0:8025
+      - MH_SMTP_BIND_ADDR=0.0.0.0:1025
+    ports:
+      - "1025:1025" # SMTP port for sending mail
+      - "8025:8025" # Web interface for viewing emails
+    volumes:
+      - mailhog_data:/MailHog/data
+
 volumes:
   pgdata:
+  pgadmin_data:
   minio_data:
+  mailhog_data:

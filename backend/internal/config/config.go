@@ -28,6 +28,13 @@ type Config struct {
 	MinioUseSSL     bool   `env:"MINIO_USE_SSL" env-default:"false"`
 	MinioBucketName string `env:"MINIO_BUCKET_NAME" env-default:"time-capsule"`
 	MinioEndpoint   string
+
+	// SMTP
+	SMTPHost     string `env:"SMTP_HOST"`
+	SMTPPort     string `env:"SMTP_PORT"`
+	SMTPPassword string `env:"SMTP_PASSWORD"`
+	SMTPFrom     string `env:"SMTP_FROM"`
+	SMTPTimeout  int    `env:"SMTP_TIMEOUT" env-default:"10"`
 }
 
 func LoadConfig() (*Config, error) {
