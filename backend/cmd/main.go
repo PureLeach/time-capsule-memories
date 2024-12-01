@@ -13,6 +13,7 @@ import (
 	"log"
 
 	"time_capsule_memories/internal/database"
+	"time_capsule_memories/internal/jobs"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/routes"
 
@@ -32,6 +33,9 @@ func main() {
 
 	// Инициализация MinIO
 	minio_client.MinioInit()
+
+	// Запуск фоновых задач
+	jobs.StartScheduler()
 
 	// Создаем экземпляр Echo
 	e := echo.New()
