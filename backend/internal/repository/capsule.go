@@ -81,6 +81,7 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 			&capsule.RecipientEmail,
 			&capsule.RecipientTgUsername,
 			&capsule.FilesFolderUUID,
+			&capsule.Status,
 		)
 		if err != nil {
 			log.Printf("Error scanning row into CapsuleResponse: %v", err)
@@ -95,4 +96,26 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 	}
 
 	return capsules, nil
+}
+
+func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
+	query := `
+	UPDATE capsules
+	SET status = $1
+	WHERE id = $2;
+	`
+
+	// Выполняем обновление статуса
+	_, err := database.DB.Exec(
+		context.Background(),
+		query,
+		newStatus,
+		capsuleID,
+	)
+	if err != nil {
+		log.Printf("Error updating capsule status: %v", err)
+		return err
+	}
+
+	return nil
 }

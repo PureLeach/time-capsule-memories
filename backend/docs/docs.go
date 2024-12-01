@@ -150,7 +150,6 @@ const docTemplate = `{
             "required": [
                 "message",
                 "recipient_email",
-                "recipient_tg_username",
                 "send_at",
                 "sender_name"
             ],
@@ -170,6 +169,7 @@ const docTemplate = `{
                 },
                 "recipient_tg_username": {
                     "type": "string",
+                    "maxLength": 50,
                     "example": "testuser"
                 },
                 "send_at": {

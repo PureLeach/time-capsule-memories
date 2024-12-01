@@ -35,6 +35,9 @@ type Config struct {
 	SMTPPassword string `env:"SMTP_PASSWORD"`
 	SMTPFrom     string `env:"SMTP_FROM"`
 	SMTPTimeout  int    `env:"SMTP_TIMEOUT" env-default:"10"`
+
+	// Scheduler
+	CronCapsuleDispatch string `env:"CRON_CAPSULE_DISPATCH"`
 }
 
 func LoadConfig() (*Config, error) {

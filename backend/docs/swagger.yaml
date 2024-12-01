@@ -35,6 +35,7 @@ definitions:
         type: string
       recipient_tg_username:
         example: testuser
+        maxLength: 50
         type: string
       send_at:
         example: "2024-11-18"
@@ -45,7 +46,6 @@ definitions:
     required:
     - message
     - recipient_email
-    - recipient_tg_username
     - send_at
     - sender_name
     type: object

@@ -144,7 +144,6 @@
             "required": [
                 "message",
                 "recipient_email",
-                "recipient_tg_username",
                 "send_at",
                 "sender_name"
             ],
@@ -164,6 +163,7 @@
                 },
                 "recipient_tg_username": {
                     "type": "string",
+                    "maxLength": 50,
                     "example": "testuser"
                 },
                 "send_at": {

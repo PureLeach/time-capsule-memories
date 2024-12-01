@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"time_capsule_memories/internal/config"
 
 	"github.com/robfig/cron/v3"
 )
 
 func StartScheduler() {
+	config := config.GetConfig()
+
 	// Устанавливаем временную зону (например, UTC)
 	loc, err := time.LoadLocation("UTC")
 	if err != nil {
@@ -18,14 +21,9 @@ func StartScheduler() {
 	// Создаем планировщик с заданной временной зоной
 	c := cron.New(cron.WithLocation(loc))
 
-	// Добавляем задачу, которая выполняется каждый день в 3:00 (в UTC)
-	c.AddFunc("0 3 * * *", func() {
-		PrintMessage()
-	})
-
 	// Пример задачи, выполняющейся каждую минуту
-	c.AddFunc("*/1 * * * *", func() {
-		PrintMessage()
+	c.AddFunc(config.CronCapsuleDispatch, func() {
+		JobCapsule()
 	})
 
 	// Запуск планировщика

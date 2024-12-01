@@ -7,7 +7,7 @@ type CreateCapsuleRequest struct {
 	SendAt              string  `json:"send_at" swaggertype:"string" example:"2024-11-18" validate:"required,send_at_date_format,future_date"`
 	Message             string  `json:"message" example:"Test Message" validate:"required,max=4096"`
 	RecipientEmail      string  `json:"recipient_email" example:"test@example.com" validate:"required,email"`
-	RecipientTgUsername string  `json:"recipient_tg_username" example:"testuser" validate:"required"`
+	RecipientTgUsername string  `json:"recipient_tg_username,omitempty" example:"testuser" validate:"omitempty,max=50"`
 	FilesFolderUUID     *string `json:"files_folder_uuid,omitempty" example:"07023417-5079-429d-a113-cbef2ef164d7" validate:"omitempty,uuid4"`
 }
 
