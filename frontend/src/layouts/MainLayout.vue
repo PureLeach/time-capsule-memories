@@ -8,7 +8,7 @@
       <slot />
     </main>
     <footer class="main-footer">
-      <p>&copy; 2024 Time Capsule Memories</p>
+      <p>&copy; 2024 Time Capsule of Memories</p>
     </footer>
   </div>
 </template>
