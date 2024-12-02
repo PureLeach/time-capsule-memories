@@ -1,0 +1,29 @@
+{
+    "welcome": {
+      "title": "Капсула воспоминаний",
+      "description": "Отправьте свои воспоминания в будущее",
+      "buttonText": "Начать"
+    },
+    "form": {
+      "senderName": "Имя отправителя",
+      "deliveryDate": "Дата доставки",
+      "message": "Сообщение",
+      "recipientEmail": "Почта получателя",
+      "recipientTelegram": "Телеграм получателя",
+      "attachments": "Прикрепить файлы",
+      "pickDate": "Выберите дату",
+
+      "namePlaceholder": "Введите ваше имя",
+
+      "nameRequired": "Ваше имя обязательно",
+      "messageRequired": "Сообщение обязательно",
+      "dateRequired": "Дата обязательна",
+      "emailRequired": "Email обязателен",
+      "invalidEmail": "Некорректный email",
+
+      "upload": "Загрузить",
+      "submit": "Отправить",
+      "reset": "Сбросить"
+    }
+  }
+  

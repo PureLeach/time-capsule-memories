@@ -1,0 +1,29 @@
+{
+    "welcome": {
+      "title": "Time Capsule Memories",
+      "description": "Send your memories to the future",
+      "buttonText": "Start"
+    },
+    "form": {
+      "senderName": "Sender's Name",
+      "deliveryDate": "Delivery Date",
+      "message": "Message",
+      "recipientEmail": "Recipient's Email",
+      "recipientTelegram": "Recipient's Telegram",
+      "attachments": "Attach Files",
+      "pickDate": "Pick a date",
+      
+      "namePlaceholder": "Enter your name",
+
+      "nameRequired": "Name required",
+      "messageRequired": "Message required",
+      "dateRequired": "Date required",
+      "emailRequired": "Email required",
+      "invalidEmail": "Invalid email",
+
+      "upload": "Upload",
+      "submit": "Submit",
+      "reset": "Reset"
+    }
+  }
+  
