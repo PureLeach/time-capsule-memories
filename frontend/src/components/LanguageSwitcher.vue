@@ -1,67 +1,84 @@
 <template>
-  <el-select
-    v-model="currentLocale"
-    size="small"
-    @change="changeLanguage"
-    class="language-switcher"
-    placeholder="Language"
-  >
-    <el-option label="English" value="en" />
-    <el-option label="Русский" value="ru" />
-  </el-select>
+  <div class="language-switcher">
+    <div
+      class="flag-container"
+      :class="{'flipping': isFlipping}"
+      @click="toggleLanguage"
+    >
+      <img
+        v-if="currentLocale === 'en'"
+        src="@/assets/flags/en.svg"
+        alt="English"
+        class="flag"
+      />
+      <img
+        v-if="currentLocale === 'ru'"
+        src="@/assets/flags/ru.svg"
+        alt="Russian"
+        class="flag"
+      />
+    </div>
+  </div>
 </template>
 
 <script>
 import { useI18n } from 'vue-i18n';
+import { ref } from 'vue'; // Импортируем ref для создания реактивных данных
 
 export default {
   setup() {
     const { locale } = useI18n();
     const currentLocale = locale;
+    const isFlipping = ref(false); // Используем ref для реактивной переменной isFlipping
 
     const changeLanguage = (value) => {
       locale.value = value;
     };
 
-    return { currentLocale, changeLanguage };
+    const toggleLanguage = () => {
+      isFlipping.value = true;
+      setTimeout(() => {
+        const newLanguage = currentLocale.value === 'en' ? 'ru' : 'en';
+        changeLanguage(newLanguage);
+        isFlipping.value = false;
+      }, 300);
+    };
+
+    return { currentLocale, toggleLanguage, isFlipping };
   },
 };
 </script>
 
 <style scoped>
 .language-switcher {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 9999;
-  width: auto;  /* Убираем фулл ширину */
-  min-width: 120px;  /* Минимальная ширина */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
 }
 
-.language-switcher .el-select {
-  width: 100%;
-  max-width: 120px;  /* Максимальная ширина */
-  font-size: 14px;
+.flag-container {
+  width: 36px; /* Уменьшаем размер */
+  height: 36px; /* Уменьшаем размер */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.3s ease;
 }
 
-.language-switcher .el-option {
-  font-size: 14px;
+.flag-container:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
-.language-switcher .el-select-dropdown {
-  border-radius: 5px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.flag {
+  width: 20px; /* Уменьшаем размер иконки */
+  height: 20px; /* Уменьшаем размер иконки */
+  transition: transform 0.3s ease;
 }
 
-.language-switcher .el-select .el-input__inner {
-  font-size: 14px;
-  padding: 5px 10px;
-}
-
-.language-switcher .el-select .el-input__inner:hover {
-  border-color: #409eff;
+.flipping .flag {
+  transform: rotateY(180deg);
 }
 </style>
