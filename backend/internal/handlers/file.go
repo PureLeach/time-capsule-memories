@@ -23,6 +23,7 @@ import (
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /generate-presigned-url [get]
 func GeneratePresignedURLHandler(c echo.Context) error {
+	// c.Response().Header().Set("Access-Control-Allow-Origin", "*")
 	// Заполняем модель параметрами запроса
 	directory := c.QueryParam("directory")
 	req := models.GeneratePresignedURLRequest{
