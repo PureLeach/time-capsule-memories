@@ -14,6 +14,7 @@ import (
 
 	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/jobs"
+	"time_capsule_memories/internal/middleware"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/routes"
 
@@ -40,6 +41,9 @@ func main() {
 	// Создаем экземпляр Echo
 	e := echo.New()
 	e.Logger.SetLevel(0)
+
+	// Применяем CORS middleware
+	e.Use(middleware.CORSConfig())
 
 	// Регистрируем обработчики
 	routes.FileRegisterRoutes(e)
