@@ -1,7 +1,7 @@
 <template>
   <div class="main-layout">
     <header class="main-header">
-      <welcome-button />
+      <navigation-menu />
       <language-switcher />
     </header>
     <main class="main-content">
@@ -14,11 +14,11 @@
 </template>
 
 <script>
-import WelcomeButton from '@/components/WelcomeButton.vue';
+import NavigationMenu from '@/components/NavigationMenu.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 
 export default {
-  components: { WelcomeButton, LanguageSwitcher },
+  components: { NavigationMenu, LanguageSwitcher },
 };
 </script>
 
@@ -35,11 +35,12 @@ export default {
   padding: 0.5rem;
   background: linear-gradient(135deg, rgba(255, 159, 128, 0.8), rgba(70, 130, 180, 0.8), rgba(25, 25, 112, 0.8));
   color: white;
-  border-bottom: 1px solid rgba(221, 221, 221, 0.5); /* Прозрачная граница */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Тень для добавления глубины */
+  border-bottom: 1px solid rgba(221, 221, 221, 0.5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   font-family: 'Arial', sans-serif;
   font-size: 1.1rem;
   letter-spacing: 0.5px;
+  padding: 2.7rem;
 }
 
 .main-content {
@@ -50,10 +51,10 @@ export default {
 .main-footer {
   text-align: center;
   padding: 0.7rem;
-  background: linear-gradient(135deg, rgba(12, 14, 29, 0.8), rgba(31, 38, 51, 0.8), rgba(41, 44, 67, 0.8), rgba(74, 42, 122, 0.8)); /* Прозрачный темный космический градиент */
+  background: linear-gradient(135deg, rgba(12, 14, 29, 0.8), rgba(31, 38, 51, 0.8), rgba(41, 44, 67, 0.8), rgba(74, 42, 122, 0.8));
   color: white;
-  border-top: 1px solid rgba(221, 221, 221, 0.5); /* Прозрачная граница */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Тень для добавления глубины */
+  border-top: 1px solid rgba(221, 221, 221, 0.5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   font-family: 'Arial', sans-serif;
   font-size: 1rem;
   letter-spacing: 0.5px;

@@ -51,6 +51,10 @@ export default {
 
 <style scoped>
 .language-switcher {
+  position: fixed; /* Фиксированное положение */
+  top: 10px; /* Отступ сверху */
+  right: 10px; /* Отступ справа */
+  z-index: 9999; /* Поверх других элементов */
   display: flex;
   justify-content: center;
   align-items: center;

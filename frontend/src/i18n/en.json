@@ -4,12 +4,15 @@
       "description": "Send your memories to the future",
       "buttonText": "Start"
     },
+    "menu": {
+      "home": "Main page",
+      "about": "About site"
+    },
     "form": {
       "senderName": "Sender's Name",
       "deliveryDate": "Delivery Date",
       "message": "Message",
       "recipientEmail": "Recipient's Email",
-      "recipientTelegram": "Recipient's Telegram",
       "attachments": "Attach Files",
       "pickDate": "Pick a date",
       
@@ -24,6 +27,17 @@
       "upload": "Upload",
       "submit": "Submit",
       "reset": "Reset"
-    }
+    },
+
+      "about": {
+        "title": "About the Project",
+        "description": "This project is a time capsule for your memories. Send letters, photos, and more to the future!",
+        "form": {
+          "label": "Your thoughts and wishes:",
+          "placeholder": "Write your message here...",
+          "submit": "Send"
+        }
+      }
+    
   }
   
