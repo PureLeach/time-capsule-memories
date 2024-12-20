@@ -9,7 +9,6 @@ CREATE TABLE capsules (
     send_at TIMESTAMP NOT NULL,
     message VARCHAR(4096) NOT NULL,
     recipient_email VARCHAR(255) NOT NULL,
-    recipient_tg_username VARCHAR(50),
     files_folder_UUID UUID,
     status status_type NOT NULL DEFAULT 'waiting'
 );

@@ -12,8 +12,6 @@ definitions:
         type: string
       recipient_email:
         type: string
-      recipient_tg_username:
-        type: string
       send_at:
         type: string
       sender_name:
@@ -33,10 +31,6 @@ definitions:
       recipient_email:
         example: test@example.com
         type: string
-      recipient_tg_username:
-        example: testuser
-        maxLength: 50
-        type: string
       send_at:
         example: "2024-11-18"
         type: string
@@ -49,9 +43,27 @@ definitions:
     - send_at
     - sender_name
     type: object
+  models.CreateFeedbackRequest:
+    properties:
+      message:
+        example: Test Message
+        maxLength: 4096
+        type: string
+    required:
+    - message
+    type: object
   models.ErrorResponse:
     properties:
       error:
+        type: string
+    type: object
+  models.FeedbackResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      message:
         type: string
     type: object
   models.PresignedURLResponse:
@@ -100,6 +112,36 @@ paths:
       summary: Создать новое событие
       tags:
       - capsules
+  /feedback:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт запись отзыва пользователя
+      parameters:
+      - description: Данные для создания отзыва
+        in: body
+        name: feedback
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateFeedbackRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешно создан отзыв
+          schema:
+            $ref: '#/definitions/models.FeedbackResponse'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Не удалось создать событие
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Отправить отзыв
+      tags:
+      - feedback
   /generate-presigned-url:
     get:
       consumes:

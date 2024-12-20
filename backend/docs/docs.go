@@ -67,6 +67,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/feedback": {
+            "post": {
+                "description": "Создаёт запись отзыва пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Отправить отзыв",
+                "parameters": [
+                    {
+                        "description": "Данные для создания отзыва",
+                        "name": "feedback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateFeedbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Успешно создан отзыв",
+                        "schema": {
+                            "$ref": "#/definitions/models.FeedbackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось создать событие",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/generate-presigned-url": {
             "get": {
                 "description": "Generates a presigned URL for uploading a file to MinIO in a specific directory (UUID).",
@@ -131,9 +177,6 @@ const docTemplate = `{
                 "recipient_email": {
                     "type": "string"
                 },
-                "recipient_tg_username": {
-                    "type": "string"
-                },
                 "send_at": {
                     "type": "string"
                 },
@@ -167,11 +210,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "test@example.com"
                 },
-                "recipient_tg_username": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "example": "testuser"
-                },
                 "send_at": {
                     "type": "string",
                     "example": "2024-11-18"
@@ -182,10 +220,37 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CreateFeedbackRequest": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "example": "Test Message"
+                }
+            }
+        },
         "models.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FeedbackResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
                     "type": "string"
                 }
             }

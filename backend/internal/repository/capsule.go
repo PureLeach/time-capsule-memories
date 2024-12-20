@@ -11,9 +11,9 @@ import (
 
 func CreateCapsule(capsule *models.CreateCapsuleRequest) (*models.CapsuleResponse, error) {
 	query := `
-	INSERT INTO capsules (sender_name, send_at, message, recipient_email, recipient_tg_username, files_folder_UUID)
-	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING id, sender_name, created_at, send_at, message, recipient_email, recipient_tg_username, files_folder_UUID, status;
+	INSERT INTO capsules (sender_name, send_at, message, recipient_email, files_folder_UUID)
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING id, sender_name, created_at, send_at, message, recipient_email, files_folder_UUID, status;
     `
 
 	createdCapsule := &models.CapsuleResponse{}
@@ -25,7 +25,6 @@ func CreateCapsule(capsule *models.CreateCapsuleRequest) (*models.CapsuleRespons
 		capsule.SendAt,
 		capsule.Message,
 		capsule.RecipientEmail,
-		capsule.RecipientTgUsername,
 		capsule.FilesFolderUUID,
 	).Scan(
 		&createdCapsule.ID,
@@ -34,7 +33,6 @@ func CreateCapsule(capsule *models.CreateCapsuleRequest) (*models.CapsuleRespons
 		&createdCapsule.SendAt,
 		&createdCapsule.Message,
 		&createdCapsule.RecipientEmail,
-		&createdCapsule.RecipientTgUsername,
 		&createdCapsule.FilesFolderUUID,
 		&createdCapsule.Status,
 	)
@@ -51,7 +49,7 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 	currentDate := time.Now().Format("2006-01-02")
 
 	query := `
-	SELECT id, sender_name, created_at, send_at, message, recipient_email, recipient_tg_username, files_folder_UUID, status
+	SELECT id, sender_name, created_at, send_at, message, recipient_email, files_folder_UUID, status
 	FROM capsules
 	WHERE send_at::date = $1 AND status = 'waiting';
 	`
@@ -79,7 +77,6 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 			&capsule.SendAt,
 			&capsule.Message,
 			&capsule.RecipientEmail,
-			&capsule.RecipientTgUsername,
 			&capsule.FilesFolderUUID,
 			&capsule.Status,
 		)

@@ -5,7 +5,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// CORSConfig для настройки CORS
 func CORSConfig() echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{

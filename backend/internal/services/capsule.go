@@ -10,10 +10,6 @@ import (
 func ProcessCapsule(capsule *models.CapsuleResponse) error {
 	log.Printf("Обработка капсулы с ID: %d", capsule.ID)
 
-	// Проверка наличия значения RecipientTgUsername
-	if capsule.RecipientTgUsername != "" {
-		log.Printf("Recipient Telegram Username: %s", capsule.RecipientTgUsername)
-	}
 	if *capsule.FilesFolderUUID != "" {
 		log.Printf("Files Folder UUID: %s", *capsule.FilesFolderUUID)
 	}
