@@ -28,11 +28,11 @@
         <!-- Attachments -->
         <el-form-item :label="$t('form.attachments')">
           <div class="attachment-container">
-            <el-upload :http-request="uploadToS3" :limit="5" :file-list="form.attachments" accept="image/*"
-              list-type="picture-card" class="file-upload" :before-upload="beforeUpload">
-              <el-button type="primary" icon="el-icon-upload" class="upload-button">
-                {{ $t('form.upload') }}
-              </el-button>
+            <el-upload class="file-upload" list-type="picture-card" accept="image/*" :http-request="uploadToS3"
+              :limit="3" :before-upload="beforeUpload" :file-list="form.attachments" @exceed="handleExceed">
+              <el-icon>
+                <Plus />
+              </el-icon>
             </el-upload>
           </div>
         </el-form-item>
@@ -51,20 +51,20 @@
   </main-layout>
 </template>
 
-
 <script>
 import axios from "axios";
 import MainLayout from "@/layouts/MainLayout.vue";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
-import { fileTypeFromBuffer } from 'file-type'; // Исправленный импорт
+import { fileTypeFromBuffer } from "file-type";
+import { Plus } from "@element-plus/icons-vue";
 
 const apiUrl = import.meta.env.VITE_BACKEND_API_URL;
 
 axios.defaults.baseURL = apiUrl;
 
 export default {
-  components: { MainLayout },
+  components: { MainLayout, Plus },
   data() {
     return {
       form: {
@@ -73,8 +73,8 @@ export default {
         message: "",
         email: "",
       },
-      uniqueId: uuidv4(), // Генерация UUID при загрузке страницы
-      presignedUrl: "", // Для хранения presigned URL
+      uniqueId: uuidv4(),
+      presignedUrl: "",
     };
   },
   computed: {
@@ -91,7 +91,6 @@ export default {
     },
   },
   created() {
-    // Генерация UUID при загрузке страницы
     this.uniqueId = uuidv4();
   },
   methods: {
@@ -103,17 +102,13 @@ export default {
     },
     async generatePresignedUrl() {
       try {
-        // Отправляем запрос на сервер для получения presigned URL с уникальным uuid
         const response = await axios.get(`/generate-presigned-url?directory=${this.uniqueId}`);
         this.presignedUrl = response.data.presigned_url;
       } catch (error) {
         console.error("Error generating presigned URL:", error);
       }
     },
-
-    // Обработка загрузки файлов на presigned URL
     async uploadToS3({ file }) {
-      // Генерация нового presigned URL перед загрузкой файла
       await this.generatePresignedUrl();
 
       if (!this.presignedUrl) {
@@ -134,20 +129,15 @@ export default {
         throw error;
       }
     },
-
-    // Проверка типа файла и размера перед загрузкой с локализацией сообщений
     async beforeUpload(file) {
-      // Проверка типа файла
       const arrayBuffer = await file.arrayBuffer();
       const type = await fileTypeFromBuffer(arrayBuffer);
 
-      // Проверка на размер файла (максимум 5 МБ)
       if (file.size > 5 * 1024 * 1024) {
         this.$message.error(this.$t("form.uploadFileSizeError"));
         return false;
       }
 
-      // Проверка на тип файла
       if (!type || !type.mime.startsWith("image/")) {
         this.$message.error(this.$t("form.uploadFileTypeError"));
         return false;
@@ -155,7 +145,9 @@ export default {
 
       return true;
     },
-
+    handleExceed() {
+      this.$message.warning(this.$t("form.uploadLimitExceeded"));
+    },
     submitForm() {
       this.$refs.formRef.validate((valid) => {
         if (valid) {
@@ -179,11 +171,10 @@ export default {
         }
       });
     },
-
     resetForm() {
       this.$refs.formRef.resetFields();
       this.form.attachments = [];
-      this.generatePresignedUrl(); // перегенерировать presigned URL для новой формы
+      this.generatePresignedUrl();
     },
   },
 };
@@ -267,6 +258,20 @@ export default {
 .el-button {
   margin-right: 10px;
 }
+
+
+
+
+::v-deep(.el-upload-list__item-preview) {
+  display: none !important;
+  /* Полностью скрывает иконку preview */
+}
+
+
+::v-deep(.el-upload-list__item-delete) {
+  position: absolute;
+  /* Абсолютное позиционирование для настройки расположения */
+  transform: translate(-50%, 0);
+  /* Сдвиг для точного центрирования */
+}
 </style>
-
-

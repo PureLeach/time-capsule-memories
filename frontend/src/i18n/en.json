@@ -24,12 +24,12 @@
       "emailRequired": "Email required",
       "invalidEmail": "Invalid email",
 
-      "upload": "Upload",
       "submit": "Submit",
       "reset": "Reset",
 
       "uploadFileTypeError": "Only image files are allowed",
-      "uploadFileSizeError": "The file size exceeds the 5 MB limit"
+      "uploadFileSizeError": "The file size exceeds the 5 MB limit",
+      "uploadLimitExceeded": "You can upload up to 3 files"
     },
 
       "about": {

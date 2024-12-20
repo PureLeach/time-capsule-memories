@@ -25,12 +25,12 @@
     "emailRequired": "Email обязателен",
     "invalidEmail": "Некорректный email",
 
-    "upload": "Загрузить",
     "submit": "Отправить",
     "reset": "Сбросить",
 
     "uploadFileTypeError": "Можно загружать только изображения",
-    "uploadFileSizeError": "Размер файла превышает ограничение в 5 МБ"
+    "uploadFileSizeError": "Размер файла превышает ограничение в 5 МБ",
+    "uploadLimitExceeded": "Можно загружать не более трёх файлов"
   },
 
   "about": {
