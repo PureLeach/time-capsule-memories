@@ -28,7 +28,8 @@
       "submit": "Submit",
       "reset": "Reset",
 
-      "uploadError": "Only image files are allowed"
+      "uploadFileTypeError": "Only image files are allowed",
+      "uploadFileSizeError": "The file size exceeds the 5 MB limit"
     },
 
       "about": {

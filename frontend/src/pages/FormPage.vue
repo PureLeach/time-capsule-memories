@@ -135,15 +135,24 @@ export default {
       }
     },
 
-    // Проверка типа файла перед загрузкой
+    // Проверка типа файла и размера перед загрузкой с локализацией сообщений
     async beforeUpload(file) {
+      // Проверка типа файла
       const arrayBuffer = await file.arrayBuffer();
-      const type = await fileTypeFromBuffer(arrayBuffer); // Используем fileTypeFromBuffer
+      const type = await fileTypeFromBuffer(arrayBuffer);
 
-      if (!type || !type.mime.startsWith("image/")) {
-        this.$message.error("Можно загружать только изображения");
+      // Проверка на размер файла (максимум 5 МБ)
+      if (file.size > 5 * 1024 * 1024) {
+        this.$message.error(this.$t("form.uploadFileSizeError"));
         return false;
       }
+
+      // Проверка на тип файла
+      if (!type || !type.mime.startsWith("image/")) {
+        this.$message.error(this.$t("form.uploadFileTypeError"));
+        return false;
+      }
+
       return true;
     },
 
@@ -179,7 +188,6 @@ export default {
   },
 };
 </script>
-
 
 
 <style scoped>
