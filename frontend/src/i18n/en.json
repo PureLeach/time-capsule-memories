@@ -26,7 +26,9 @@
 
       "upload": "Upload",
       "submit": "Submit",
-      "reset": "Reset"
+      "reset": "Reset",
+
+      "uploadError": "Only image files are allowed"
     },
 
       "about": {

@@ -3,7 +3,6 @@
     <el-card class="form-card">
       <!-- Rules Form -->
       <el-form :model="form" :rules="rules" ref="formRef" label-width="150px" class="custom-form">
-
         <!-- Sender's Name -->
         <el-form-item :label="$t('form.senderName')" prop="name">
           <el-input v-model="form.name" maxlength="30" :placeholder="$t('form.namePlaceholder')" class="input-field" />
@@ -30,7 +29,7 @@
         <el-form-item :label="$t('form.attachments')">
           <div class="attachment-container">
             <el-upload :http-request="uploadToS3" :limit="5" :file-list="form.attachments" accept="image/*"
-              list-type="picture-card" class="file-upload">
+              list-type="picture-card" class="file-upload" :before-upload="beforeUpload">
               <el-button type="primary" icon="el-icon-upload" class="upload-button">
                 {{ $t('form.upload') }}
               </el-button>
@@ -51,11 +50,14 @@
     </el-card>
   </main-layout>
 </template>
+
+
 <script>
 import axios from "axios";
 import MainLayout from "@/layouts/MainLayout.vue";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
+import { fileTypeFromBuffer } from 'file-type'; // Исправленный импорт
 
 const apiUrl = import.meta.env.VITE_BACKEND_API_URL;
 
@@ -105,14 +107,7 @@ export default {
         const response = await axios.get(`/generate-presigned-url?directory=${this.uniqueId}`);
         this.presignedUrl = response.data.presigned_url;
       } catch (error) {
-        if (error.response) {
-          console.error("Error Status:", error.response.status);
-          console.error("Error Body:", error.response.data);
-        } else if (error.request) {
-          console.error("No response received:", error.request);
-        } else {
-          console.error("Request Error:", error.message);
-        }
+        console.error("Error generating presigned URL:", error);
       }
     },
 
@@ -136,8 +131,20 @@ export default {
         console.log("File uploaded successfully");
       } catch (error) {
         console.error("Error uploading file to S3:", error.message || error);
-        throw error; // пробрасываем ошибку для дальнейшей обработки
+        throw error;
       }
+    },
+
+    // Проверка типа файла перед загрузкой
+    async beforeUpload(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const type = await fileTypeFromBuffer(arrayBuffer); // Используем fileTypeFromBuffer
+
+      if (!type || !type.mime.startsWith("image/")) {
+        this.$message.error("Можно загружать только изображения");
+        return false;
+      }
+      return true;
     },
 
     submitForm() {
