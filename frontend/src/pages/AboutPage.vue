@@ -18,11 +18,21 @@
           </transition>
         </div>
 
-        <form class="about-form">
+        <form class="about-form" @submit.prevent="handleSubmit">
           <label for="message" class="form-label">{{ $t('about.form.label') }}</label>
-          <textarea id="message" class="form-textarea" rows="5" :placeholder="$t('about.form.placeholder')"></textarea>
+          <textarea id="message" class="form-textarea" rows="5" v-model="message"
+            :placeholder="$t('about.form.placeholder')"></textarea>
           <button type="submit" class="form-button">{{ $t('about.form.submit') }}</button>
         </form>
+      </div>
+    </div>
+
+    <!-- Всплывающее окно -->
+    <div v-if="showModal" class="modal">
+      <div class="modal-content">
+        <h2 class="modal-title">{{ $t('about.modal.title') }}</h2>
+        <p class="modal-message">{{ $t('about.modal.message') }}</p>
+        <button @click="redirectHome" class="modal-button">{{ $t('about.modal.button') }}</button>
       </div>
     </div>
   </main-layout>
@@ -38,7 +48,9 @@ export default {
   },
   data() {
     return {
-      isOpen: false // Состояние спойлера
+      isOpen: false, // Состояние спойлера
+      message: '', // Хранение текста сообщения
+      showModal: false, // Состояние модального окна
     };
   },
   methods: {
@@ -61,6 +73,40 @@ export default {
       el.style.opacity = 0;
       el.style.transform = 'translateY(-10px)';
       done();
+    },
+    async handleSubmit() {
+      if (!this.message.trim()) {
+        alert('Please enter a message');
+        return;
+      }
+
+      const url = `${import.meta.env.VITE_BACKEND_API_URL}/feedback`;
+      const payload = { message: this.message };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Feedback submitted successfully', result);
+          this.showModal = true; // Показать модальное окно
+        } else {
+          console.error('Failed to submit feedback', response);
+          alert('Failed to submit feedback, please try again later.');
+        }
+      } catch (error) {
+        console.error('Error submitting feedback', error);
+        alert('An error occurred, please try again later.');
+      }
+    },
+    redirectHome() {
+      this.$router.push('/'); // Редирект на главную страницу
     }
   }
 };
@@ -127,7 +173,8 @@ export default {
 .spoiler-button::before {
   content: '';
   position: absolute;
-  left: -5px; /* Сдвигает стрелку влево */
+  left: -5px;
+  /* Сдвигает стрелку влево */
   top: 30%;
   transform: translateY(-50%);
   width: 10px;
@@ -150,13 +197,15 @@ export default {
 .spoiler-content {
   background: rgba(0, 0, 51, 0.7);
   color: #fff;
-  padding: 1rem;  
+  padding: 1rem;
   border-radius: 10px;
   margin-top: 1rem;
   font-size: 1rem;
   line-height: 1.5;
-  width: 100%; /* Убедитесь, что контент спойлера будет растягиваться на всю доступную ширину */
-  box-sizing: border-box; /* Чтобы паддинги не нарушали размер */
+  width: 100%;
+  /* Убедитесь, что контент спойлера будет растягиваться на всю доступную ширину */
+  box-sizing: border-box;
+  /* Чтобы паддинги не нарушали размер */
 }
 
 .spoiler-content-enter-active,
@@ -164,7 +213,8 @@ export default {
   transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
-.spoiler-content-enter, .spoiler-content-leave-to {
+.spoiler-content-enter,
+.spoiler-content-leave-to {
   opacity: 0;
   transform: translateY(-10px);
 }
@@ -210,6 +260,63 @@ export default {
 }
 
 .form-button:active {
+  background: linear-gradient(145deg, #b8860b, #ffd700);
+  transform: scale(1);
+}
+
+/* Стиль для модального окна */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: rgba(25, 25, 112, 0.9);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  color: white;
+  text-align: center;
+  width: 300px;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.modal-message {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-button {
+  background: linear-gradient(145deg, #ffd700, #daa520);
+  color: #fff8dc;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.modal-button:hover {
+  background: linear-gradient(145deg, #daa520, #ffd700);
+  transform: scale(1.05);
+}
+
+.modal-button:active {
   background: linear-gradient(145deg, #b8860b, #ffd700);
   transform: scale(1);
 }

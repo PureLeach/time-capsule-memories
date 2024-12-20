@@ -36,13 +36,19 @@
         "spoiler": {
           "open": "More info",
           "close": "Hide info",
-          "text": "This site is a pet project developed by Barannikov Maxim (tg:@PureLeach). The main goal of the project is to independently go through all stages of web application development: from design and code writing to frontend and backend integration and successful deployment to hosting.\n\nSince the project was developed alone with limited resources and time, bugs may occur on the site. If you notice bugs, please report them through the feedback form - it will help me to make the project better. Also I will be glad to receive any feedback and suggestions for improvement.\n\nThe source code for the entire application is publicly available at <a href='https://github.com/PureLeach/time-capsule-memories' target='_blank'>GitHub</a>. Thank you for your attention and support!"
+          "text": "This site is a pet project developed by Barannikov Maxim (tg:@PureLeach). The main goal of the project is to independently go through all stages of web application development: from design and code writing to frontend and backend integration and successful deployment to hosting.\n\nSince the project was developed alone with limited resources and time, bugs may occur on the site. If you notice bugs, please report them through the feedback form - it will help me to make the project better. Also I will be glad to receive any feedback and suggestions for improvement.\n\nThe source code for the entire application is publicly available at <a href='https://github.com/PureLeach/time-capsule-memories' target='_blank' style='color: yellow;'>GitHub</a>. Thank you for your attention and support!"
         },
 
         "form": {
           "label": "Your thoughts and wishes:",
           "placeholder": "Write your message here...",
           "submit": "Send"
+        },
+
+        "modal": {
+          "title": "Your feedback has been submitted!",
+          "message": "Thank you for your feedback.",
+          "button": "Go to main page"
         }
       }
     
