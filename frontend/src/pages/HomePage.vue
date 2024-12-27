@@ -4,9 +4,9 @@
       <h1>{{ $t('welcome.title') }}</h1>
       <p>{{ $t('welcome.description') }}</p>
       <transition name="fade" mode="out-in">
-        <transition-button :to="'/form'" class="welcome-button" key="button">
+        <start-button :to="'/form'" class="welcome-button" key="button">
           {{ $t('welcome.buttonText') }}
-        </transition-button>
+        </start-button>
       </transition>
     </section>
   </main-layout>
@@ -14,10 +14,10 @@
 
 <script>
 import MainLayout from '@/layouts/MainLayout.vue';
-import TransitionButton from '@/components/TransitionButton.vue';
+import StartButton from '@/components/StartButton.vue';
 
 export default {
-  components: { MainLayout, TransitionButton },
+  components: { MainLayout, StartButton },
 };
 </script>
 

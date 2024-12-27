@@ -1,6 +1,6 @@
 <template>
   <falling-stars ref="stars" />
-  <el-button type="primary" :to="to" @click="handleClick" class="transition-button">
+  <el-button type="primary" :to="to" @click="handleClick" class="start-button">
     <slot />
   </el-button>
 </template>
@@ -34,7 +34,7 @@ export default {
 
 <style scoped>
 /* Основной стиль для кнопки */
-.transition-button {
+.start-button {
   position: relative;
   padding: 20px 40px;
   /* Увеличен размер кнопки */
@@ -53,7 +53,7 @@ export default {
 }
 
 /* Эффект неонового свечения */
-.transition-button::before {
+.start-button::before {
   content: '';
   position: absolute;
   top: -5px;
@@ -68,7 +68,7 @@ export default {
 }
 
 /* Плавный эффект при наведении */
-.transition-button:hover {
+.start-button:hover {
   background: #333;
   box-shadow: 0 0 20px rgba(255, 255, 255, 1);
 }
