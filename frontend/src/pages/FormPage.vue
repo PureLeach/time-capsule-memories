@@ -10,14 +10,14 @@
 
         <!-- Delivery Date -->
         <el-form-item :label="$t('form.deliveryDate')" prop="date">
-          <el-date-picker v-model="form.date" type="date" :placeholder="$t('form.deliveryDate')"
-            :disabled-date="disablePastDates" class="input-field" />
+          <el-date-picker v-model="form.date" type="date" format="DD/MM/YYYY" :placeholder="$t('form.deliveryDate')"
+            style="width: 96%; height: 40px; font-size: 14px;" :disabled-date="disablePastDates" class="input-field" />
         </el-form-item>
 
         <!-- Message -->
         <el-form-item :label="$t('form.message')" prop="message">
           <el-input v-model="form.message" type="textarea" maxlength="4096" :placeholder="$t('form.message')"
-            class="input-field" />
+            class="input-field custom-input" />
         </el-form-item>
 
         <!-- Recipient Email -->
@@ -37,19 +37,25 @@
           </div>
         </el-form-item>
 
-        <!-- Submit Button -->
-        <el-form-item>
-          <el-button type="primary" @click="submitForm" class="submit-button">
-            {{ $t('form.submit') }}
-          </el-button>
-          <el-button type="default" @click="resetForm" class="reset-button">
-            {{ $t('form.reset') }}
-          </el-button>
-        </el-form-item>
+
       </el-form>
+          <!-- Submit and Reset Buttons -->
+          <el-form-item class="form-buttons">
+          <div class="submit-reset-container">
+            <el-button type="primary" @click="submitForm" class="submit-button">
+              {{ $t('form.submit') }}
+            </el-button>
+            <el-button type="default" @click="resetForm" class="reset-button">
+              {{ $t('form.reset') }}
+            </el-button>
+          </div>
+        </el-form-item>
+  
     </el-card>
+  
   </main-layout>
 </template>
+
 
 <script>
 import axios from "axios";
@@ -181,57 +187,110 @@ export default {
 </script>
 
 
+
+
 <style scoped>
-/* Изменить текст лейблов */
+
+/* Основная форма */
+.form-card {
+  display: flex; 
+  max-width: 530px;
+  margin: 0 auto;
+  margin-top: 50px;
+  padding: 10px;
+  border-radius: 16px;
+  background: radial-gradient(circle, rgba(41, 123, 134, 0.9), rgba(2, 76, 92, 0.8), rgba(2, 76, 92, 0.9));
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  text-align: left;
+  flex-direction: column;
+
+  gap: 1.5rem;
+  text-align: center;
+  border: none;
+}
+
+/* Лейблы */
+.el-form-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .custom-form :deep(.el-form-item__label) {
   color: #dfeefa;
 }
 
+/* Лейблы - выравнивание по правому краю */
+.el-form-item .el-form-item__label {
+  text-align: right;
+  padding-right: 20px;
+  width: 150px;
+}
 
-/* Фоновая форма */
-.form-card {
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 30px;
-  background: linear-gradient(135deg, rgba(66, 100, 120, 0.6) 0%, rgba(90, 130, 160, 0.6) 100%);
-  border-radius: 25px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-  /* уменьшена непрозрачность тени */
-  backdrop-filter: blur(15px);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  /* граница с прозрачностью */
-  animation: glow 1.5s infinite alternate;
+.el-input,
+.el-date-picker {
+  width: 96%;
+}
 
-  /* Добавление Flexbox */
+.custom-input {
+  width: 96%;
+}
+
+.input-field {
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+
+/* Прикрепленные файлы */
+
+.attachment-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* Центрируем элементы по горизонтали */
   justify-content: center;
-  /* Центрируем элементы по вертикали */
-  gap: 20px;
-  /* Добавляем пространство между элементами */
+
 }
 
-@keyframes glow {
-  0% {
-    box-shadow: 0 0 10px rgba(66, 100, 120, 0.8), 0 0 20px rgba(90, 130, 160, 0.8);
-  }
-
-  100% {
-    box-shadow: 0 0 20px rgba(66, 100, 120, 0.9), 0 0 40px rgba(90, 130, 160, 0.9);
-  }
+::v-deep(.el-upload-list__item-preview) {
+  display: none !important;
+  /* Полностью скрывает иконку preview */
 }
+
+::v-deep(.el-upload-list__item-delete) {
+  position: absolute;
+  /* Абсолютное позиционирование для настройки расположения */
+  transform: translate(-50%, 0);
+  /* Сдвиг для точного центрирования */
+}
+
 
 
 /* Кнопки */
 
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submit-reset-container {
+  justify-content: space-between;
+  width: 100%;
+}
+
+.submit-button,
+.reset-button {
+  width: 46%;
+  height: 35px;
+  font-size: 14px;
+  text-align: center;
+}
+
+
 .submit-button {
   background: linear-gradient(45deg, rgba(102, 217, 255, 1) 0%, rgba(45, 99, 255, 1) 100%);
   color: white;
-  padding: 10px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   cursor: pointer;
 }
 
@@ -243,9 +302,8 @@ export default {
 .reset-button {
   background: linear-gradient(45deg, rgba(255, 255, 255, 1) 0%, rgba(234, 234, 234, 1) 100%);
   color: #333;
-  padding: 10px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   cursor: pointer;
 }
 
@@ -255,23 +313,8 @@ export default {
 }
 
 
-.el-button {
-  margin-right: 10px;
-}
 
 
 
 
-::v-deep(.el-upload-list__item-preview) {
-  display: none !important;
-  /* Полностью скрывает иконку preview */
-}
-
-
-::v-deep(.el-upload-list__item-delete) {
-  position: absolute;
-  /* Абсолютное позиционирование для настройки расположения */
-  transform: translate(-50%, 0);
-  /* Сдвиг для точного центрирования */
-}
 </style>

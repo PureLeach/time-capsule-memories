@@ -1,6 +1,6 @@
 {
     "welcome": {
-      "title": "Time Capsule of memories",
+      "title": "Time Capsule of Memories",
       "description": "Send your memories to the future",
       "buttonText": "Start"
     },
@@ -13,7 +13,7 @@
       "deliveryDate": "Delivery Date",
       "message": "Message",
       "recipientEmail": "Recipient's Email",
-      "attachments": "Attach Files",
+      "attachments": "Attach images",
       "pickDate": "Pick a date",
       
       "namePlaceholder": "Enter your name",
@@ -51,7 +51,11 @@
         "modal": {
           "title": "Your feedback has been submitted!",
           "message": "Thank you for your feedback.",
-          "button": "Go to main page"
+          "button": "Go to main page",
+
+          "errorTitle": "Error",
+          "errorMessage": "Please enter a message",
+          "errorButton": "Close"
         }
       }
     
