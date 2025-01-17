@@ -27,16 +27,28 @@
       </div>
     </div>
 
-    <!-- Всплывающее окно -->
+    <!-- Всплывающее окно для успешной отправки -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
         <h2 class="modal-title">{{ $t('about.modal.title') }}</h2>
         <p class="modal-message">{{ $t('about.modal.message') }}</p>
-        <button @click="redirectHome" class="modal-button">{{ $t('about.modal.button') }}</button>
+        <button @click="redirectHome(true)" class="modal-button">{{ $t('about.modal.button') }}</button>
       </div>
     </div>
+
+
+    <!-- Всплывающее окно для ошибки -->
+    <div v-if="showErrorModal" class="modal">
+      <div class="modal-content">
+        <h2 class="modal-title">{{ $t('about.modal.errorTitle') }}</h2>
+        <p class="modal-message">{{ $t('about.modal.errorMessage') }}</p>
+        <button @click="redirectHome(false)" class="modal-button">{{ $t('about.modal.errorButton') }}</button>
+      </div>
+    </div>
+
   </main-layout>
 </template>
+
 
 <script>
 import MainLayout from '@/layouts/MainLayout.vue';
@@ -50,7 +62,8 @@ export default {
     return {
       isOpen: false, // Состояние спойлера
       message: '', // Хранение текста сообщения
-      showModal: false, // Состояние модального окна
+      showModal: false, // Состояние модального окна успешной отправки
+      showErrorModal: false, // Состояние модального окна ошибки
     };
   },
   methods: {
@@ -76,7 +89,7 @@ export default {
     },
     async handleSubmit() {
       if (!this.message.trim()) {
-        alert('Please enter a message');
+        this.showErrorModal = true; // Показываем модальное окно с ошибкой
         return;
       }
 
@@ -95,7 +108,7 @@ export default {
         if (response.ok) {
           const result = await response.json();
           console.log('Feedback submitted successfully', result);
-          this.showModal = true; // Показать модальное окно
+          this.showModal = true; // Показываем модальное окно с успехом
         } else {
           console.error('Failed to submit feedback', response);
           alert('Failed to submit feedback, please try again later.');
@@ -105,11 +118,19 @@ export default {
         alert('An error occurred, please try again later.');
       }
     },
-    redirectHome() {
-      this.$router.push('/'); // Редирект на главную страницу
-    }
+    redirectHome(isSuccess) {
+  if (isSuccess) {
+    this.$router.push('/'); // Редирект на главную страницу, если успех
+  }
+  this.showModal = false;  // Закрываем модальное окно после редиректа
+  this.showErrorModal = false;  // Закрываем модальное окно ошибки
+}
+
   }
 };
+
+
+
 </script>
 
 <style scoped>
@@ -124,7 +145,7 @@ export default {
 .about-form-container {
   max-width: 640px;
   width: 100%;
-  background: radial-gradient(circle, rgba(25, 25, 112, 0.9), rgba(0, 0, 51, 0.8), rgba(47, 79, 79, 0.9));
+  background: radial-gradient(circle, rgba(41, 123, 134, 0.9), rgba(2, 76, 92, 0.8), rgba(2, 76, 92, 0.9));
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
@@ -195,7 +216,7 @@ export default {
 }
 
 .spoiler-content {
-  background: rgba(0, 0, 51, 0.7);
+  background: rgba(52, 123, 133, 0.7);
   color: #fff;
   padding: 1rem;
   border-radius: 10px;
@@ -242,7 +263,7 @@ export default {
 }
 
 .form-button {
-  background: linear-gradient(145deg, #ffd700, #daa520);
+  background: linear-gradient(145deg, #ffcc00, #ffd700, #ffcc00);
   color: #fff8dc;
   padding: 0.8rem 2rem;
   font-size: 1rem;
@@ -251,18 +272,27 @@ export default {
   cursor: pointer;
   font-weight: bold;
   text-transform: uppercase;
-  transition: background 0.3s ease, transform 0.2s ease;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+  background-size: 200% 200%;
+  background-position: 100% 0;
 }
 
 .form-button:hover {
-  background: linear-gradient(145deg, #daa520, #ffd700);
+  background: linear-gradient(145deg, #ffd700, #ffcc00, #ffd700);
   transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.5);
+  background-position: 0 0;
 }
 
 .form-button:active {
-  background: linear-gradient(145deg, #b8860b, #ffd700);
+  background: linear-gradient(145deg, #b8860b, #ffd700, #b8860b);
   transform: scale(1);
+  box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+  background-position: 100% 0;
 }
+
+
 
 /* Стиль для модального окна */
 .modal {
@@ -279,13 +309,13 @@ export default {
 }
 
 .modal-content {
-  background: rgba(25, 25, 112, 0.9);
-  padding: 2rem;
+  background: #2c4e79;  
+  padding: 1rem;
   border-radius: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   color: white;
   text-align: center;
-  width: 300px;
+  width: 350px;
 }
 
 .modal-title {
@@ -299,7 +329,7 @@ export default {
 }
 
 .modal-button {
-  background: linear-gradient(145deg, #ffd700, #daa520);
+  background: linear-gradient(145deg, #eecc0fe1, #daa520);
   color: #fff8dc;
   padding: 0.8rem 2rem;
   font-size: 1rem;
