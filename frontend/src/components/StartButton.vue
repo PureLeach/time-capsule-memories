@@ -32,6 +32,8 @@ export default {
 };
 </script>
 
+
+
 <style scoped>
 /* Основной стиль для кнопки */
 .start-button {
@@ -49,7 +51,7 @@ export default {
   transition: all 0.3s ease;
   overflow: hidden;
   cursor: pointer;
-  animation: gradientAnimation 10s ease-in-out infinite; /* Увеличили продолжительность анимации */
+  width: 150px; /* Фиксированная ширина */
 }
 
 /* Эффект неонового свечения */
@@ -64,7 +66,6 @@ export default {
   z-index: -1;
   filter: blur(10px);
   opacity: 0.8;
-  animation: pulse 1s infinite alternate;
 }
 
 /* Плавный эффект при наведении */
@@ -73,34 +74,4 @@ export default {
   box-shadow: 0 0 20px rgba(255, 255, 255, 1);
 }
 
-/* Анимация пульсации */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-}
-
-/* Анимация градиента по кругу (медленный эффект переливания) */
-@keyframes gradientAnimation {
-  0% {
-    background: linear-gradient(135deg, #1d2a6c, #0d1b2a);
-  }
-  25% {
-    background: linear-gradient(135deg, #374c91, #1b2c53);
-  }
-  50% {
-    background: linear-gradient(135deg, #1a355b, #2e3a77);
-  }
-  75% {
-    background: linear-gradient(135deg, #4f6796, #1d2a6c);
-  }
-  100% {
-    background: linear-gradient(135deg, #1d2a6c, #0d1b2a);
-  }
-}
 </style>

@@ -54,7 +54,6 @@ export default {
   position: fixed; /* Фиксированное положение */
   top: 10px; /* Отступ сверху */
   right: 10px; /* Отступ справа */
-  z-index: 9999; /* Поверх других элементов */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -62,8 +61,8 @@ export default {
 }
 
 .flag-container {
-  width: 36px; /* Уменьшаем размер */
-  height: 36px; /* Уменьшаем размер */
+  width: 30px; /* Уменьшаем размер */
+  height: 30px; /* Уменьшаем размер */
   display: flex;
   justify-content: center;
   align-items: center;

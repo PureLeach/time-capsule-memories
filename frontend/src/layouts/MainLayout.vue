@@ -33,14 +33,14 @@ export default {
   display: flex;
   justify-content: space-between;
   padding: 0.5rem;
-  background: linear-gradient(135deg, rgba(255, 159, 128, 0.8), rgba(70, 130, 180, 0.8), rgba(25, 25, 112, 0.8));
+  background: linear-gradient(135deg, rgba(19, 121, 104, 0.8), rgba(128, 83, 89, 0.664), rgba(25, 25, 112, 0.8));
   color: white;
   border-bottom: 1px solid rgba(221, 221, 221, 0.5);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   font-family: 'Arial', sans-serif;
   font-size: 1.1rem;
   letter-spacing: 0.5px;
-  padding: 2.7rem;
+  padding: 1.6rem;
 }
 
 .main-content {
@@ -60,7 +60,4 @@ export default {
   letter-spacing: 0.5px;
 }
 
-.main-footer p {
-  margin: 0;
-}
 </style>

@@ -23,20 +23,19 @@
     justify-content: center;
     padding: 0.5rem 1rem;
     background: linear-gradient(135deg, rgba(0, 0, 51, 0.9), rgba(20, 24, 82, 0.8), rgba(47, 79, 79, 0.9));
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    position: fixed; /* Фиксированное положение */
-    top: 10px; /* Отступ сверху */
-    left: 10px; /* Отступ слева */
-    z-index: 9999; /* Поверх других элементов */
+    position: fixed;
+    top: 3px;
+    left: 1px;
   }
   
   .menu-item {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 150px; /* Фиксированная ширина для одинакового размера кнопок */
-    height: 40px; /* Фиксированная высота для одинакового размера кнопок */
+    width: 150px;
+    height: 30px;
     color: #f0f8ff;
     font-size: 1rem;
     font-weight: bold;
@@ -44,8 +43,9 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: color 0.3s ease, transform 0.3s ease;
-    padding: 5px 10px; /* Отступ внутри кнопки */
-    border-radius: 8px; /* Закругленные углы для кнопок */
+    padding: 5px 10px;
+    border-radius: 8px;
+    position: relative; /* Нужно для псевдоэлементов */
   }
   
   .menu-item:hover {
@@ -60,7 +60,8 @@
     width: 0;
     height: 2px;
     background: #87ceeb;
-    transition: width 0.4s ease;
+    transition: width 0.4s ease, opacity 0.4s ease;
+    opacity: 0;
   }
   
   .menu-item::before {
@@ -76,6 +77,7 @@
   .menu-item:hover::before,
   .menu-item:hover::after {
     width: 100%;
+    opacity: 1;
   }
   
   .navigation-menu::before {
