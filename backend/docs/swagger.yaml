@@ -52,6 +52,26 @@ definitions:
     required:
     - message
     type: object
+  models.EmailDataRequest:
+    properties:
+      body:
+        example: Test body
+        maxLength: 4096
+        type: string
+      files_folder_uuid:
+        example: 07023417-5079-429d-a113-cbef2ef164d7
+        type: string
+      recipient_email:
+        example: test@example.com
+        type: string
+      subject:
+        example: Test subject
+        type: string
+    required:
+    - body
+    - recipient_email
+    - subject
+    type: object
   models.ErrorResponse:
     properties:
       error:
@@ -172,4 +192,32 @@ paths:
       summary: Generate a presigned URL for file upload
       tags:
       - file
+  /send-test-email:
+    post:
+      consumes:
+      - application/json
+      description: Генерируем и отправляем тестовый email
+      parameters:
+      - description: Данные для отправки по почте
+        in: body
+        name: email
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmailDataRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Письмо успешно отправлено
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Не удалось отправить письмо
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Отправить тестовый email
+      tags:
+      - email
 swagger: "2.0"

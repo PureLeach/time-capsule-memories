@@ -12,12 +12,20 @@ run:
 	go run -v ./cmd/main.go
 
 
+test:
+	go test -v -count=1 ./...
+
+
 docs_generation:
 	swag init -g cmd/main.go
 
 
 clean:
 	go clean -cache && go clean -modcache
+
+
+create_migration:
+	goose create $(name) sql -dir ./migrations
 
 
 migrate_up:

@@ -156,6 +156,49 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/send-test-email": {
+            "post": {
+                "description": "Генерируем и отправляем тестовый email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "email"
+                ],
+                "summary": "Отправить тестовый email",
+                "parameters": [
+                    {
+                        "description": "Данные для отправки по почте",
+                        "name": "email",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.EmailDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Письмо успешно отправлено"
+                    },
+                    "400": {
+                        "description": "Некорректные данные",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось отправить письмо",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -230,6 +273,33 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test Message"
+                }
+            }
+        },
+        "models.EmailDataRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "recipient_email",
+                "subject"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "example": "Test body"
+                },
+                "files_folder_uuid": {
+                    "type": "string",
+                    "example": "07023417-5079-429d-a113-cbef2ef164d7"
+                },
+                "recipient_email": {
+                    "type": "string",
+                    "example": "test@example.com"
+                },
+                "subject": {
+                    "type": "string",
+                    "example": "Test subject"
                 }
             }
         },

@@ -49,6 +49,7 @@ func main() {
 	routes.FileRegisterRoutes(e)
 	routes.CapsuleRegisterRoutes(e)
 	routes.FeedbackRegisterRoutes(e)
+	routes.EmailRegisterRoutes(e)
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	e.Logger.Infof("Запуск сервера на порту :8000")
