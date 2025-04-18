@@ -2,3 +2,4 @@
 backend/bin/
 frontend/node_modules
 .vscode/
+.env

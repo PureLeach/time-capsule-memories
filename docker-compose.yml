@@ -1,0 +1,154 @@
+version: "3.8"
+
+services:
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.insecure=true" # Панель управления Traefik
+      - "--providers.docker=true" # Автообнаружение сервисов Docker
+      - "--providers.docker.exposedbydefault=false" # Экспонировать только помеченные сервисы
+      - "--entrypoints.web.address=:80" # HTTP вход
+    ports:
+      - "80:80"     # HTTP для всех сервисов
+      - "8080:8080" # Панель управления Traefik
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Доступ к Docker API
+    networks:
+      time-capsule-network: # Общая сеть для маршрутизации
+        aliases:
+          - ${MINIO_ENDPOINT}
+
+  postgres:
+    image: postgres:16.3-alpine
+    container_name: time-capsule-memories-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+      - PGPORT=${POSTGRES_PORT}
+    restart: unless-stopped
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - time-capsule-network
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER} -p ${POSTGRES_PORT} -d ${POSTGRES_DB_NAME}
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: time-capsule-memories-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - time-capsule-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.localhost`)"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+
+  minio:
+    image: minio/minio:latest
+    container_name: time-capsule-memories-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_DOMAIN: minio.localhost
+    command: server --console-address ":9001" /data
+    volumes:
+      - minio_data:/data
+    networks:
+      - time-capsule-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+
+      # UI MinIO
+      - "traefik.http.routers.minio-console.rule=Host(`minio.localhost`)"
+      - "traefik.http.routers.minio-console.entrypoints=web"
+      - "traefik.http.routers.minio-console.service=minio-console-svc"
+      - "traefik.http.services.minio-console-svc.loadbalancer.server.port=9001"
+
+      # API MinIO
+      - "traefik.http.routers.minio-api.rule=Host(`minio-api.localhost`)"
+      - "traefik.http.routers.minio-api.entrypoints=web"
+      - "traefik.http.routers.minio-api.service=minio-api-svc"
+      - "traefik.http.services.minio-api-svc.loadbalancer.server.port=9000"
+
+  
+  backend:
+    container_name: time-capsule-memories-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./.env
+    volumes:
+      - type: bind
+        source: ./.env
+        target: /app/.env
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - time-capsule-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`backend.localhost`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  frontend:
+    container_name: time-capsule-memories-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - type: bind
+        source: ./.env
+        target: /app/.env
+    depends_on:
+      - backend
+    networks:
+      - time-capsule-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=8001"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: time-capsule-memories-mailhog
+    restart: unless-stopped
+    environment:
+      - MH_STORAGE=maildir
+      - MH_HTTP_BIND_ADDR=0.0.0.0:8025
+      - MH_SMTP_BIND_ADDR=0.0.0.0:1025
+    ports:
+      - "1025:1025" # SMTP port for sending mail
+      - "8025:8025" # Web interface for viewing emails
+    volumes:
+      - mailhog_data:/MailHog/data
+    networks:
+      - time-capsule-network
+
+networks:
+  time-capsule-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  pgadmin_data:
+  minio_data:
+  mailhog_data:

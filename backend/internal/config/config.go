@@ -23,11 +23,9 @@ type Config struct {
 	// MinIO
 	MinioAccessKey  string `env:"MINIO_ROOT_USER" env-default:"minioaccesskey"`
 	MinioSecretKey  string `env:"MINIO_ROOT_PASSWORD" env-default:"miniosecretkey"`
-	MinioHost       string `env:"MINIO_HOST" env-default:"localhost"`
-	MinioPort       string `env:"MINIO_PORT" env-default:"9000"`
+	MinioEndpoint   string `env:"MINIO_ENDPOINT" env-default:"minio-api.localhost"`
 	MinioUseSSL     bool   `env:"MINIO_USE_SSL" env-default:"false"`
 	MinioBucketName string `env:"MINIO_BUCKET_NAME" env-default:"time-capsule"`
-	MinioEndpoint   string
 
 	// SMTP
 	SMTPHost     string `env:"SMTP_HOST"`
@@ -51,7 +49,8 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 
-	config.MinioEndpoint = fmt.Sprintf("%s:%s", config.MinioHost, config.MinioPort)
+	// config.MinioEndpoint = "minio-api.localhost"
+	// config.MinioEndpoint = fmt.Sprintf("%s:%s", config.MinioHost, config.MinioPort)
 
 	return &config, nil
 }

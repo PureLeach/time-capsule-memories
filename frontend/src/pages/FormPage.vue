@@ -121,20 +121,20 @@ export default {
         console.error("Presigned URL is missing or invalid");
         return Promise.reject(new Error("Presigned URL is not available"));
       }
-
+      
       const s3Axios = axios.create();
       try {
-        await s3Axios.put(this.presignedUrl, file, {
+        const response = await s3Axios.put(this.presignedUrl, file, {
           headers: {
-            "Content-Type": file.type,
+        "Content-Type": file.type,
           },
         });
-        console.log("File uploaded successfully");
+        console.log("File uploaded successfully", response);
       } catch (error) {
         console.error("Error uploading file to S3:", error.message || error);
         throw error;
       }
-    },
+        },
     async beforeUpload(file) {
       const arrayBuffer = await file.arrayBuffer();
       const type = await fileTypeFromBuffer(arrayBuffer);
