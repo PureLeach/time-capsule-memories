@@ -3,38 +3,51 @@ definitions:
   models.CapsuleResponse:
     properties:
       created_at:
+        description: Date and time when the capsule was created
         type: string
       files_folder_uuid:
+        description: Optional folder UUID for files
         type: string
       id:
+        description: Capsule ID
         type: integer
       message:
+        description: Message text
         type: string
       recipient_email:
+        description: Recipient's email address
         type: string
       send_at:
+        description: Date and time when the capsule is scheduled to be sent
         type: string
       sender_name:
+        description: Sender's name
         type: string
       status:
+        description: Status of the capsule (e.g., pending, sent)
         type: string
     type: object
   models.CreateCapsuleRequest:
     properties:
       files_folder_uuid:
+        description: Optional folder UUID for files
         example: 07023417-5079-429d-a113-cbef2ef164d7
         type: string
       message:
+        description: Message text to be sent
         example: Test Message
         maxLength: 4096
         type: string
       recipient_email:
+        description: Recipient's email address
         example: test@example.com
         type: string
       send_at:
+        description: Send date in string format
         example: "2024-11-18"
         type: string
       sender_name:
+        description: Sender's name
         example: John Doe
         type: string
     required:
@@ -46,6 +59,7 @@ definitions:
   models.CreateFeedbackRequest:
     properties:
       message:
+        description: The feedback message (up to 4096 characters)
         example: Test Message
         maxLength: 4096
         type: string
@@ -55,16 +69,20 @@ definitions:
   models.EmailDataRequest:
     properties:
       body:
+        description: Body content of the email with a maximum character limit
         example: Test body
         maxLength: 4096
         type: string
       files_folder_uuid:
+        description: Optional UUID for the folder containing attachments
         example: 07023417-5079-429d-a113-cbef2ef164d7
         type: string
       recipient_email:
+        description: Recipient's email address
         example: test@example.com
         type: string
       subject:
+        description: Subject of the email
         example: Test subject
         type: string
     required:
@@ -75,28 +93,33 @@ definitions:
   models.ErrorResponse:
     properties:
       error:
+        description: A brief description of the error
         type: string
     type: object
   models.FeedbackResponse:
     properties:
       created_at:
+        description: The date and time when the feedback was created
         type: string
       id:
+        description: The unique identifier for the feedback
         type: integer
       message:
+        description: The feedback message content
         type: string
     type: object
   models.PresignedURLResponse:
     properties:
       presigned_url:
+        description: The generated presigned URL for file upload
         type: string
     type: object
-host: localhost:8000
+host: backend.localhost
 info:
   contact:
     name: API Support
     url: http://www.example.com/support
-  description: This is a sample server for Time Capsule Memories.
+  description: REST API backend for the Time Capsule Memories project.
   license:
     name: MIT
   title: Time Capsule Memories API
@@ -106,9 +129,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создает новое событие с заданными параметрами
+      description: Creates a new time capsule with the given parameters
       parameters:
-      - description: Данные для создания события
+      - description: Capsule creation payload
         in: body
         name: capsule
         required: true
@@ -118,27 +141,27 @@ paths:
       - application/json
       responses:
         "201":
-          description: Успешно создано событие
+          description: Capsule created successfully
           schema:
             $ref: '#/definitions/models.CapsuleResponse'
         "400":
-          description: Некорректные данные
+          description: Invalid request data
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Не удалось создать событие
+          description: Failed to create capsule
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Создать новое событие
+      summary: Create a new capsule
       tags:
       - capsules
   /feedback:
     post:
       consumes:
       - application/json
-      description: Создаёт запись отзыва пользователя
+      description: Stores user feedback in the database
       parameters:
-      - description: Данные для создания отзыва
+      - description: Feedback data
         in: body
         name: feedback
         required: true
@@ -148,28 +171,28 @@ paths:
       - application/json
       responses:
         "201":
-          description: Успешно создан отзыв
+          description: Feedback successfully created
           schema:
             $ref: '#/definitions/models.FeedbackResponse'
         "400":
-          description: Некорректные данные
+          description: Invalid input data
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Не удалось создать событие
+          description: Internal server error
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Отправить отзыв
+      summary: Submit user feedback
       tags:
       - feedback
   /generate-presigned-url:
     get:
       consumes:
       - application/json
-      description: Generates a presigned URL for uploading a file to MinIO in a specific
-        directory (UUID).
+      description: Generates a presigned URL for uploading a file to a specific directory
+        (UUID) in MinIO.
       parameters:
-      - description: UUID4 directory for file upload
+      - description: Target directory UUID
         in: query
         name: directory
         required: true
@@ -178,15 +201,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: Presigned URL for file upload
+          description: Presigned URL generated successfully
           schema:
             $ref: '#/definitions/models.PresignedURLResponse'
         "400":
-          description: Bad request
+          description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to generate presigned URL
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Generate a presigned URL for file upload
@@ -196,9 +219,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Генерируем и отправляем тестовый email
+      description: Generates and sends a test email
       parameters:
-      - description: Данные для отправки по почте
+      - description: Email payload
         in: body
         name: email
         required: true
@@ -208,16 +231,16 @@ paths:
       - application/json
       responses:
         "204":
-          description: Письмо успешно отправлено
+          description: Email sent successfully
         "400":
-          description: Некорректные данные
+          description: Invalid input data
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Не удалось отправить письмо
+          description: Failed to send email
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Отправить тестовый email
+      summary: Send a test email
       tags:
       - email
 swagger: "2.0"

@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
@@ -12,40 +10,49 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// @Summary Отправить тестовый email
-// @Description Генерируем и отправляем тестовый email
+// @Summary Send a test email
+// @Description Generates and sends a test email
 // @Tags email
 // @Accept json
 // @Produce json
-// @Param email body models.EmailDataRequest true "Данные для отправки по почте"
-// @Success 204 {object} nil "Письмо успешно отправлено"
-// @Failure 400 {object} models.ErrorResponse "Некорректные данные"
-// @Failure 500 {object} models.ErrorResponse "Не удалось отправить письмо"
+// @Param email body models.EmailDataRequest true "Email payload"
+// @Success 204 "Email sent successfully"
+// @Failure 400 {object} models.ErrorResponse "Invalid input data"
+// @Failure 500 {object} models.ErrorResponse "Failed to send email"
 // @Router /send-test-email [post]
 func SendTestEmail(c echo.Context) error {
 	var emailData models.EmailDataRequest
 
-	// Привязка данных из запроса
+	// Bind request body to struct
 	if err := c.Bind(&emailData); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Некорректные данные: " + err.Error()})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Invalid request payload: " + err.Error(),
+		})
 	}
 
-	// Валидация данных
+	// Validate input data
 	if err := validators.ValidateStruct(emailData); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
-
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: err.Error(),
+		})
 	}
 
-	// Получаем файлы из MinIO
+	// Fetch attachments from MinIO
 	attachments, err := minio_client.GetFilesInDirectory(*emailData.FilesFolderUUID)
 	if err != nil {
-		log.Fatalf("Ошибка при получении файлов из каталога %s: %v", *emailData.FilesFolderUUID, err)
+		c.Logger().Errorf("Failed to get files from directory %s: %v", *emailData.FilesFolderUUID, err)
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Could not retrieve attachments",
+		})
 	}
 
-	err = services.SendEmail(emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments)
-	if err != nil {
-		return fmt.Errorf("error sending email: %v", err)
+	// Send the email
+	if err := services.SendEmail(emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
+		c.Logger().Errorf("Failed to send email: %v", err)
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Could not send email",
+		})
 	}
 
-	return c.JSON(http.StatusNoContent, nil)
+	return c.NoContent(http.StatusNoContent)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/validators"
@@ -13,39 +14,40 @@ import (
 )
 
 // @Summary Generate a presigned URL for file upload
-// @Description Generates a presigned URL for uploading a file to MinIO in a specific directory (UUID).
+// @Description Generates a presigned URL for uploading a file to a specific directory (UUID) in MinIO.
 // @Tags file
 // @Accept json
 // @Produce json
-// @Param directory query string true "UUID4 directory for file upload"
-// @Success 200 {object} models.PresignedURLResponse "Presigned URL for file upload"
-// @Failure 400 {object} models.ErrorResponse "Bad request"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error"
+// @Param directory query string true "Target directory UUID"
+// @Success 200 {object} models.PresignedURLResponse "Presigned URL generated successfully"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 500 {object} models.ErrorResponse "Failed to generate presigned URL"
 // @Router /generate-presigned-url [get]
 func GeneratePresignedURLHandler(c echo.Context) error {
-	// c.Response().Header().Set("Access-Control-Allow-Origin", "*")
-	// Заполняем модель параметрами запроса
 	directory := c.QueryParam("directory")
 	req := models.GeneratePresignedURLRequest{
 		Directory: directory,
 	}
 
-	// Валидируем запрос через функцию валидации
+	// Validate input
 	if err := validators.ValidateGeneratePresignedURLRequest(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Validation error: " + err.Error(),
+		})
 	}
 
-	// Генерация случайного имени файла (UUID)
-	fileName := (uuid.New()).String()
+	// Generate a unique file name
+	fileName := uuid.New().String()
 
-	// Генерация presigned URL для загрузки файла
-	presignedURL, err := minio_client.GeneratePresignedUploadURL(directory+"/"+fileName, time.Hour)
-
+	// Generate a presigned upload URL valid for 1 hour
+	presignedURL, err := minio_client.GeneratePresignedUploadURL(fmt.Sprintf("%s/%s", directory, fileName), time.Hour)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: fmt.Sprintf("Failed to generate presigned URL: %v", err)})
+		c.Logger().Errorf("Failed to generate presigned URL: %v", err)
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Could not generate presigned URL",
+		})
 	}
 
-	// Возвращаем presigned URL
 	return c.JSON(http.StatusOK, models.PresignedURLResponse{
 		PresignedURL: presignedURL,
 	})

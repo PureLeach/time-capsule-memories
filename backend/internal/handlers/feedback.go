@@ -9,34 +9,41 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// @Summary Отправить отзыв
-// @Description Создаёт запись отзыва пользователя
+// @Summary Submit user feedback
+// @Description Stores user feedback in the database
 // @Tags feedback
 // @Accept json
 // @Produce json
-// @Param feedback body models.CreateFeedbackRequest true "Данные для создания отзыва"
-// @Success 201 {object} models.FeedbackResponse "Успешно создан отзыв"
-// @Failure 400 {object} models.ErrorResponse "Некорректные данные"
-// @Failure 500 {object} models.ErrorResponse "Не удалось создать событие"
+// @Param feedback body models.CreateFeedbackRequest true "Feedback data"
+// @Success 201 {object} models.FeedbackResponse "Feedback successfully created"
+// @Failure 400 {object} models.ErrorResponse "Invalid input data"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
 // @Router /feedback [post]
 func CreateFeedback(c echo.Context) error {
 	var feedback models.CreateFeedbackRequest
 
-	// Привязка данных из запроса
+	// Bind request payload
 	if err := c.Bind(&feedback); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Некорректные данные: " + err.Error()})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Invalid request payload: " + err.Error(),
+		})
 	}
 
-	// Валидация данных
-	var validate = validator.New()
+	// Validate the input
+	validate := validator.New()
 	if err := validate.Struct(feedback); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Ошибка валидации: " + err.Error()})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Validation error: " + err.Error(),
+		})
 	}
 
-	// Сохранение события в базе данных
-	createdFeedback, err := repository.CreateFeedback(&feedback)
+	// Store feedback in the database
+	createdFeedback, err := repository.CreateUserFeedback(&feedback)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Не удалось создать событие"})
+		c.Logger().Errorf("Failed to create feedback: %v", err)
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Failed to create feedback",
+		})
 	}
 
 	return c.JSON(http.StatusCreated, createdFeedback)

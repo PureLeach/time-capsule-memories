@@ -2,15 +2,19 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
 )
 
-var instance *Config
-var once sync.Once
+var (
+	instance *Config
+	once     sync.Once
+)
 
+// Config holds all environment configuration variables for the application
 type Config struct {
 	// PostgreSQL
 	DBUser      string `env:"POSTGRES_USER" env-default:"user"`
@@ -42,29 +46,25 @@ func LoadConfig() (*Config, error) {
 	var config Config
 
 	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("ошибка загрузки .env файла")
+		log.Println("No .env file found, skipping...")
 	}
 
 	if err := cleanenv.ReadEnv(&config); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read environment variables: %w", err)
 	}
-
-	// config.MinioEndpoint = "minio-api.localhost"
-	// config.MinioEndpoint = fmt.Sprintf("%s:%s", config.MinioHost, config.MinioPort)
 
 	return &config, nil
 }
 
-// Функция для получения конфигурации (Singleton)
+// GetConfig returns a singleton instance of the Config.
+// It initializes the config once using sync.Once.
 func GetConfig() *Config {
-	// Используем sync.Once для гарантии, что конфигурация будет загружена только один раз
 	once.Do(func() {
 		var err error
 		instance, err = LoadConfig()
 		if err != nil {
-			panic(fmt.Sprintf("Не удалось загрузить конфигурацию: %v", err))
+			panic(fmt.Sprintf("Failed to load configuration: %v", err))
 		}
 	})
-
 	return instance
 }

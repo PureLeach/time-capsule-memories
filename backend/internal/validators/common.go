@@ -7,16 +7,20 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-var common_validate = validator.New()
+// Common validator instance
+var commonValidate = validator.New()
 
-// ValidateStruct выполняет валидацию структуры и возвращает описание ошибок
+// ValidateStruct validates the provided struct and returns a description of validation errors.
 func ValidateStruct(data interface{}) error {
-	if err := common_validate.Struct(data); err != nil {
+	if err := commonValidate.Struct(data); err != nil {
+		// Cast the error to a ValidationErrors type to extract field-level errors
 		validationErrors := err.(validator.ValidationErrors)
 		var errorMessages []string
+		// Iterate through validation errors and format the error messages
 		for _, ve := range validationErrors {
-			errorMessages = append(errorMessages, fmt.Sprintf("Поле '%s' не прошло валидацию: правило '%s'", ve.Field(), ve.Tag()))
+			errorMessages = append(errorMessages, fmt.Sprintf("Field '%s' failed validation: rule '%s'", ve.Field(), ve.Tag()))
 		}
+		// Return the concatenated error messages
 		return fmt.Errorf("%s", strings.Join(errorMessages, "; "))
 	}
 	return nil

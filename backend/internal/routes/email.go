@@ -6,6 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func EmailRegisterRoutes(e *echo.Echo) {
+func RegisterEmailRoutes(e *echo.Echo) {
 	e.POST("/send-test-email", handlers.SendTestEmail)
 }

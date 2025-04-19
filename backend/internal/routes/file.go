@@ -6,6 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func FileRegisterRoutes(e *echo.Echo) {
+func RegisterFileRoutes(e *echo.Echo) {
 	e.GET("/generate-presigned-url", handlers.GeneratePresignedURLHandler)
 }

@@ -9,33 +9,39 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// @Summary Создать новое событие
-// @Description Создает новое событие с заданными параметрами
+// @Summary Create a new capsule
+// @Description Creates a new time capsule with the given parameters
 // @Tags capsules
 // @Accept json
 // @Produce json
-// @Param capsule body models.CreateCapsuleRequest true "Данные для создания события"
-// @Success 201 {object} models.CapsuleResponse "Успешно создано событие"
-// @Failure 400 {object} models.ErrorResponse "Некорректные данные"
-// @Failure 500 {object} models.ErrorResponse "Не удалось создать событие"
+// @Param capsule body models.CreateCapsuleRequest true "Capsule creation payload"
+// @Success 201 {object} models.CapsuleResponse "Capsule created successfully"
+// @Failure 400 {object} models.ErrorResponse "Invalid request data"
+// @Failure 500 {object} models.ErrorResponse "Failed to create capsule"
 // @Router /capsules [post]
 func CreateCapsule(c echo.Context) error {
 	var capsule models.CreateCapsuleRequest
 
-	// Привязка данных из запроса
+	// Bind JSON payload to struct
 	if err := c.Bind(&capsule); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "Некорректные данные: " + err.Error()})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: "Invalid request payload: " + err.Error(),
+		})
 	}
 
-	// Валидация данных
+	// Validate capsule data
 	if err := validators.ValidateCapsule(capsule); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Error: err.Error(),
+		})
 	}
 
-	// Сохранение события в базе данных
+	// Create capsule in database
 	createdCapsule, err := repository.CreateCapsule(&capsule)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Не удалось создать событие"})
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error: "Could not create capsule",
+		})
 	}
 
 	return c.JSON(http.StatusCreated, createdCapsule)

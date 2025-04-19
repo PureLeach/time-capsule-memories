@@ -8,16 +8,18 @@ import (
 	"time_capsule_memories/internal/models"
 )
 
-func CreateFeedback(feedback *models.CreateFeedbackRequest) (*models.FeedbackResponse, error) {
+// CreateUserFeedback creates a new feedback from a user and returns the created feedback data.
+func CreateUserFeedback(feedback *models.CreateFeedbackRequest) (createdFeedback *models.FeedbackResponse, err error) {
 	query := `
 	INSERT INTO users_feedback (message)
 	VALUES ($1)
 	RETURNING id, created_at, message;
     `
 
-	createdFeedback := &models.FeedbackResponse{}
+	createdFeedback = &models.FeedbackResponse{}
 
-	err := database.DB.QueryRow(
+	// Execute the query to insert the feedback into the database
+	err = database.DB.QueryRow(
 		context.Background(),
 		query,
 		feedback.Message,

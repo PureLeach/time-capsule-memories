@@ -29,6 +29,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB_NAME}
       - PGPORT=${POSTGRES_PORT}
     restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -52,6 +54,8 @@ services:
     depends_on:
       - postgres
     restart: unless-stopped
+    logging:
+      driver: "none"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.localhost`)"
@@ -67,6 +71,9 @@ services:
     command: server --console-address ":9001" /data
     volumes:
       - minio_data:/data
+    ports:
+      - "9000:9000" # The API port for MinIO
+      - "9001:9001" # Port for MinIO Console (Web interface)
     networks:
       - time-capsule-network
     restart: unless-stopped

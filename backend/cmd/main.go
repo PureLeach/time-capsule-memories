@@ -1,10 +1,10 @@
 // @title Time Capsule Memories API
 // @version 1.0
-// @description This is a sample server for Time Capsule Memories.
+// @description REST API backend for the Time Capsule Memories project.
 // @contact.name API Support
 // @contact.url http://www.example.com/support
 // @license.name MIT
-// @host localhost:8000
+// @host backend.localhost
 // @BasePath /
 
 package main
@@ -20,38 +20,41 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	_ "time_capsule_memories/docs"
+	_ "time_capsule_memories/docs" // Swagger docs
 
 	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 func main() {
-	// Инициализация базы данных
+	// Initialize the database connection
 	if err := database.Connect(); err != nil {
-		log.Fatalf("Ошибка подключения к базе данных: %v", err)
+		log.Fatalf("Database connection failed: %v", err)
 	}
 	defer database.Close()
 
-	// Инициализация MinIO
+	// Initialize the MinIO client
 	minio_client.MinioInit()
 
-	// Запуск фоновых задач
+	// Start background jobs (e.g., scheduled tasks)
 	jobs.StartScheduler()
 
-	// Создаем экземпляр Echo
+	// Create a new Echo instance
 	e := echo.New()
 	e.Logger.SetLevel(0)
 
-	// Применяем CORS middleware
+	// Register global middleware
 	e.Use(middleware.CORSConfig())
 
-	// Регистрируем обработчики
-	routes.FileRegisterRoutes(e)
-	routes.CapsuleRegisterRoutes(e)
-	routes.FeedbackRegisterRoutes(e)
-	routes.EmailRegisterRoutes(e)
+	// Register API routes
+	routes.RegisterFileRoutes(e)
+	routes.RegisterCapsuleRoutes(e)
+	routes.RegisterFeedbackRoutes(e)
+	routes.RegisterEmailRoutes(e)
+
+	// Swagger documentation endpoint
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	e.Logger.Infof("Запуск сервера на порту :8000")
+	// Start the HTTP server
+	log.Println("Starting server on port :8000")
 	e.Logger.Fatal(e.Start(":8000"))
 }

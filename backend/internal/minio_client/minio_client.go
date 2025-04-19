@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -22,9 +21,9 @@ var (
 	once                sync.Once
 )
 
-// Получаем Singleton экземпляр MinIO клиента
+// GetMinioClient returns a Singleton instance of the MinIO client.
 func GetMinioClient() (*minio.Client, error) {
-	// Используем sync.Once для гарантии, что клиент создается только один раз
+	// Use sync.Once to ensure the client is initialized only once
 	once.Do(func() {
 		var err error
 		minioClientInstance, err = minio.New(config.GetConfig().MinioEndpoint, &minio.Options{
@@ -32,109 +31,111 @@ func GetMinioClient() (*minio.Client, error) {
 			Secure: config.GetConfig().MinioUseSSL,
 		})
 		if err != nil {
-			log.Fatalf("Ошибка инициализации MinIO клиента: %v", err)
+			log.Fatalf("Error initializing MinIO client: %v", err)
 		}
 
-		log.Printf("MinIO клиент инициализирован, endpoint: %s", config.GetConfig().MinioEndpoint)
+		log.Printf("MinIO client initialized, endpoint: %s", config.GetConfig().MinioEndpoint)
 	})
 
 	return minioClientInstance, nil
 }
 
-// Инициализация MinIO и создание бакета
+// MinioInit initializes MinIO and creates the bucket if it doesn't exist.
 func MinioInit() {
 	bucketName := config.GetConfig().MinioBucketName
 	minioClient, err := GetMinioClient()
 	if err != nil {
-		log.Fatalf("Ошибка при получении MinIO клиента: %v", err)
+		log.Fatalf("Error getting MinIO client: %v", err)
 	}
 
+	// Check if MinIO connection is successful
 	_, err = minioClient.ListBuckets(context.Background())
 	if err != nil {
-		log.Fatalf("Ошибка подключения к MinIO: %v", err)
+		log.Fatalf("Error connecting to MinIO: %v", err)
 	}
-	log.Println("Подключение к MinIO успешно установлено")
+	log.Println("Successfully connected to MinIO")
 
+	// Check if the bucket exists
 	exists, err := minioClient.BucketExists(context.Background(), bucketName)
 	if err != nil {
-		log.Fatalf("Ошибка при проверке существования бакета %s: %v", bucketName, err)
+		log.Fatalf("Error checking if bucket %s exists: %v", bucketName, err)
 	}
 
+	// Create bucket if it does not exist
 	if !exists {
-		log.Printf("Бакет %s не найден. Пытаемся создать...", bucketName)
+		log.Printf("Bucket %s not found. Attempting to create...", bucketName)
 		err = minioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{Region: ""})
 		if err != nil {
-			log.Fatalf("Не удалось создать бакет %s: %v", bucketName, err)
+			log.Fatalf("Failed to create bucket %s: %v", bucketName, err)
 		}
-		log.Printf("Бакет %s успешно создан", bucketName)
+		log.Printf("Bucket %s created successfully", bucketName)
 	} else {
-		log.Printf("Бакет %s уже существует", bucketName)
+		log.Printf("Bucket %s already exists", bucketName)
 	}
 }
 
-// Генерируем presigned URL для загрузки файла в MinIO
+// GeneratePresignedUploadURL generates a presigned URL for uploading a file to MinIO.
 func GeneratePresignedUploadURL(objectName string, expiration time.Duration) (string, error) {
 	bucketName := config.GetConfig().MinioBucketName
 	ctx := context.Background()
 
 	minioClient, err := GetMinioClient()
 	if err != nil {
-		return "", fmt.Errorf("ошибка при получении MinIO клиента: %w", err)
+		return "", fmt.Errorf("error getting MinIO client: %w", err)
 	}
 
 	presignedURL, err := minioClient.PresignedPutObject(ctx, bucketName, objectName, expiration)
 	if err != nil {
-		return "", fmt.Errorf("ошибка генерации presigned URL для объекта %s: %w", objectName, err)
+		return "", fmt.Errorf("error generating presigned URL for object %s: %w", objectName, err)
 	}
 
 	return presignedURL.String(), nil
 }
 
-// Получение списка файлов по uuid каталога вместе с содержимым
+// GetFilesInDirectory retrieves the list of files in a directory by its UUID, along with the contents.
 func GetFilesInDirectory(directoryUUID string) ([]models.FileObject, error) {
 	bucketName := config.GetConfig().MinioBucketName
 	ctx := context.Background()
 
 	minioClient, err := GetMinioClient()
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при получении MinIO клиента: %w", err)
+		return nil, fmt.Errorf("error getting MinIO client: %w", err)
 	}
 
-	// Создаем канал для листинга объектов
+	// Create a channel to list objects
 	objectCh := minioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
-		Prefix:    directoryUUID + "/", // Указываем префикс каталога
-		Recursive: false,               // Не углубляемся в подкаталоги
+		Prefix:    directoryUUID + "/", // Specify the directory prefix
+		Recursive: false,               // Do not recurse into subdirectories
 	})
 
 	var files []models.FileObject
 	for object := range objectCh {
 		if object.Err != nil {
-			return nil, fmt.Errorf("ошибка при получении объекта из MinIO: %w", object.Err)
+			return nil, fmt.Errorf("error retrieving object from MinIO: %w", object.Err)
 		}
 
-		// Получаем объект
+		// Get the object
 		obj, err := minioClient.GetObject(ctx, bucketName, object.Key, minio.GetObjectOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("ошибка при получении содержимого объекта %s: %w", object.Key, err)
+			return nil, fmt.Errorf("error getting object %s content: %w", object.Key, err)
 		}
 
-		// Читаем содержимое объекта
+		// Read the content of the object
 		var buffer bytes.Buffer
 		if _, err := io.Copy(&buffer, obj); err != nil {
-			return nil, fmt.Errorf("ошибка при чтении содержимого объекта %s: %w", object.Key, err)
+			return nil, fmt.Errorf("error reading content of object %s: %w", object.Key, err)
 		}
 
-		// Получаем информацию об объекте
+		// Get object info
 		stat, err := obj.Stat()
 		if err != nil {
-			return nil, fmt.Errorf("ошибка при получении информации об объекте %s: %w", object.Key, err)
+			return nil, fmt.Errorf("error retrieving information about object %s: %w", object.Key, err)
 		}
 
-		// Извлекаем имя файла и добавляем тип расширения из Content-Type
+		// Extract the file name and add the extension from Content-Type
 		f := strings.Split(object.Key, "/")
 		name := f[len(f)-1]
 		contentType := stat.ContentType
-		fmt.Printf("contentType: %#v Type: %v\n", contentType, reflect.TypeOf(contentType))
 		if contentType != "" {
 			ext := strings.Split(contentType, "/")
 			if len(ext) == 2 {

@@ -8,31 +8,37 @@ import (
 	"time_capsule_memories/internal/repository"
 )
 
+// ProcessCapsule processes the capsule, retrieves files from MinIO, sends an email with the files,
+// and updates the capsule's status to "done" in the database.
 func ProcessCapsule(capsule *models.CapsuleResponse) error {
-	log.Printf("Обработка капсулы с ID: %d", capsule.ID)
+	log.Printf("Processing capsule with ID: %d", capsule.ID)
 
+	// If the FilesFolderUUID is provided, log it.
 	if *capsule.FilesFolderUUID != "" {
 		log.Printf("Files Folder UUID: %s", *capsule.FilesFolderUUID)
 	}
 
-	// Получаем файлы из MinIO
+	// Retrieve files from MinIO
 	attachments, err := minio_client.GetFilesInDirectory(*capsule.FilesFolderUUID)
 	if err != nil {
-		log.Fatalf("Ошибка при получении файлов из каталога %s: %v", *capsule.FilesFolderUUID, err)
+		// Fatal log is too strong here, use a normal error log and return the error instead.
+		log.Printf("Error retrieving files from directory %s: %v", *capsule.FilesFolderUUID, err)
+		return fmt.Errorf("error retrieving files from MinIO: %v", err)
 	}
 
-	// Формируем тему письма и отправляем его по почте вместе с вложениями
-	subject := fmt.Sprintf("Вам пришла капсула времени от %s", capsule.SenderName)
-	err = SendEmail(subject, capsule.Message, capsule.RecipientEmail, attachments)
-	if err != nil {
+	// Prepare the email subject and send it with the message and attachments
+	subject := fmt.Sprintf("You've received a time capsule from %s", capsule.SenderName)
+
+	if err := SendEmail(subject, capsule.Message, capsule.RecipientEmail, attachments); err != nil {
+		log.Printf("Error details: %v", err)
 		return fmt.Errorf("error sending email: %v", err)
 	}
 
-	// Меняем статус капсулы на "done" в БД
-	err = repository.UpdateCapsuleStatusByID(capsule.ID, "done")
-	if err != nil {
-		return fmt.Errorf("error updating status: %v", err)
+	// Update the capsule's status to "done" in the database
+	if err := repository.UpdateCapsuleStatusByID(capsule.ID, "done"); err != nil {
+		return fmt.Errorf("error updating capsule status: %v", err)
 	}
-	log.Println("Обработка капсулы завершена")
+
+	log.Println("Capsule processing completed")
 	return nil
 }

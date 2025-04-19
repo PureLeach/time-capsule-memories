@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"fmt"
 	"log"
 	"time"
 	"time_capsule_memories/internal/config"
@@ -9,29 +8,34 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+// StartScheduler initializes and starts the cron scheduler for recurring tasks.
 func StartScheduler() {
-	config := config.GetConfig()
+	// Fetch the configuration settings
+	cfg := config.GetConfig()
 
-	// Устанавливаем временную зону (например, UTC)
+	// Load the timezone (e.g., UTC). Log an error and exit if it fails.
 	loc, err := time.LoadLocation("UTC")
 	if err != nil {
-		panic(fmt.Sprintf("Ошибка загрузки временной зоны: %v", err))
+		log.Fatalf("Failed to load timezone: %v", err) // Use log.Fatalf for immediate exit on critical errors
 	}
 
-	// Создаем планировщик с заданной временной зоной
+	// Create a new cron scheduler with the specified timezone
 	c := cron.New(cron.WithLocation(loc))
 
-	// Пример задачи, выполняющейся каждую минуту
-	c.AddFunc(config.CronCapsuleDispatch, func() {
-		JobCapsule()
+	// Add the capsule dispatch job with the cron expression from the configuration
+	_, err = c.AddFunc(cfg.CronCapsuleDispatch, func() {
+		JobCapsule() // Execute the capsule dispatch job
 	})
+	if err != nil {
+		log.Fatalf("Failed to schedule capsule dispatch job: %v", err)
+	}
 
-	// Запуск планировщика
+	// Start the scheduler in a separate goroutine for asynchronous execution
 	go func() {
-		log.Println("Cron: Планировщик запущен")
+		log.Println("[CRON] Scheduler started successfully.")
 		c.Start()
 	}()
 
-	// Завершение планировщика при остановке программы
+	// Ensure the scheduler is stopped when the program exits
 	defer c.Stop()
 }

@@ -23,7 +23,7 @@ const docTemplate = `{
     "paths": {
         "/capsules": {
             "post": {
-                "description": "Создает новое событие с заданными параметрами",
+                "description": "Creates a new time capsule with the given parameters",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,10 +33,10 @@ const docTemplate = `{
                 "tags": [
                     "capsules"
                 ],
-                "summary": "Создать новое событие",
+                "summary": "Create a new capsule",
                 "parameters": [
                     {
-                        "description": "Данные для создания события",
+                        "description": "Capsule creation payload",
                         "name": "capsule",
                         "in": "body",
                         "required": true,
@@ -47,19 +47,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Успешно создано событие",
+                        "description": "Capsule created successfully",
                         "schema": {
                             "$ref": "#/definitions/models.CapsuleResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Invalid request data",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Не удалось создать событие",
+                        "description": "Failed to create capsule",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -69,7 +69,7 @@ const docTemplate = `{
         },
         "/feedback": {
             "post": {
-                "description": "Создаёт запись отзыва пользователя",
+                "description": "Stores user feedback in the database",
                 "consumes": [
                     "application/json"
                 ],
@@ -79,10 +79,10 @@ const docTemplate = `{
                 "tags": [
                     "feedback"
                 ],
-                "summary": "Отправить отзыв",
+                "summary": "Submit user feedback",
                 "parameters": [
                     {
-                        "description": "Данные для создания отзыва",
+                        "description": "Feedback data",
                         "name": "feedback",
                         "in": "body",
                         "required": true,
@@ -93,19 +93,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Успешно создан отзыв",
+                        "description": "Feedback successfully created",
                         "schema": {
                             "$ref": "#/definitions/models.FeedbackResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Invalid input data",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Не удалось создать событие",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -115,7 +115,7 @@ const docTemplate = `{
         },
         "/generate-presigned-url": {
             "get": {
-                "description": "Generates a presigned URL for uploading a file to MinIO in a specific directory (UUID).",
+                "description": "Generates a presigned URL for uploading a file to a specific directory (UUID) in MinIO.",
                 "consumes": [
                     "application/json"
                 ],
@@ -129,7 +129,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID4 directory for file upload",
+                        "description": "Target directory UUID",
                         "name": "directory",
                         "in": "query",
                         "required": true
@@ -137,19 +137,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Presigned URL for file upload",
+                        "description": "Presigned URL generated successfully",
                         "schema": {
                             "$ref": "#/definitions/models.PresignedURLResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to generate presigned URL",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -159,7 +159,7 @@ const docTemplate = `{
         },
         "/send-test-email": {
             "post": {
-                "description": "Генерируем и отправляем тестовый email",
+                "description": "Generates and sends a test email",
                 "consumes": [
                     "application/json"
                 ],
@@ -169,10 +169,10 @@ const docTemplate = `{
                 "tags": [
                     "email"
                 ],
-                "summary": "Отправить тестовый email",
+                "summary": "Send a test email",
                 "parameters": [
                     {
-                        "description": "Данные для отправки по почте",
+                        "description": "Email payload",
                         "name": "email",
                         "in": "body",
                         "required": true,
@@ -183,16 +183,16 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "204": {
-                        "description": "Письмо успешно отправлено"
+                        "description": "Email sent successfully"
                     },
                     "400": {
-                        "description": "Некорректные данные",
+                        "description": "Invalid input data",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Не удалось отправить письмо",
+                        "description": "Failed to send email",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -206,27 +206,35 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
+                    "description": "Date and time when the capsule was created",
                     "type": "string"
                 },
                 "files_folder_uuid": {
+                    "description": "Optional folder UUID for files",
                     "type": "string"
                 },
                 "id": {
+                    "description": "Capsule ID",
                     "type": "integer"
                 },
                 "message": {
+                    "description": "Message text",
                     "type": "string"
                 },
                 "recipient_email": {
+                    "description": "Recipient's email address",
                     "type": "string"
                 },
                 "send_at": {
+                    "description": "Date and time when the capsule is scheduled to be sent",
                     "type": "string"
                 },
                 "sender_name": {
+                    "description": "Sender's name",
                     "type": "string"
                 },
                 "status": {
+                    "description": "Status of the capsule (e.g., pending, sent)",
                     "type": "string"
                 }
             }
@@ -241,23 +249,28 @@ const docTemplate = `{
             ],
             "properties": {
                 "files_folder_uuid": {
+                    "description": "Optional folder UUID for files",
                     "type": "string",
                     "example": "07023417-5079-429d-a113-cbef2ef164d7"
                 },
                 "message": {
+                    "description": "Message text to be sent",
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test Message"
                 },
                 "recipient_email": {
+                    "description": "Recipient's email address",
                     "type": "string",
                     "example": "test@example.com"
                 },
                 "send_at": {
+                    "description": "Send date in string format",
                     "type": "string",
                     "example": "2024-11-18"
                 },
                 "sender_name": {
+                    "description": "Sender's name",
                     "type": "string",
                     "example": "John Doe"
                 }
@@ -270,6 +283,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "message": {
+                    "description": "The feedback message (up to 4096 characters)",
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test Message"
@@ -285,19 +299,23 @@ const docTemplate = `{
             ],
             "properties": {
                 "body": {
+                    "description": "Body content of the email with a maximum character limit",
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test body"
                 },
                 "files_folder_uuid": {
+                    "description": "Optional UUID for the folder containing attachments",
                     "type": "string",
                     "example": "07023417-5079-429d-a113-cbef2ef164d7"
                 },
                 "recipient_email": {
+                    "description": "Recipient's email address",
                     "type": "string",
                     "example": "test@example.com"
                 },
                 "subject": {
+                    "description": "Subject of the email",
                     "type": "string",
                     "example": "Test subject"
                 }
@@ -307,6 +325,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "description": "A brief description of the error",
                     "type": "string"
                 }
             }
@@ -315,12 +334,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
+                    "description": "The date and time when the feedback was created",
                     "type": "string"
                 },
                 "id": {
+                    "description": "The unique identifier for the feedback",
                     "type": "integer"
                 },
                 "message": {
+                    "description": "The feedback message content",
                     "type": "string"
                 }
             }
@@ -329,6 +351,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "presigned_url": {
+                    "description": "The generated presigned URL for file upload",
                     "type": "string"
                 }
             }
@@ -339,11 +362,11 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8000",
+	Host:             "backend.localhost",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Time Capsule Memories API",
-	Description:      "This is a sample server for Time Capsule Memories.",
+	Description:      "REST API backend for the Time Capsule Memories project.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

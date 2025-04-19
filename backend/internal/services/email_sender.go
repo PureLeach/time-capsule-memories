@@ -11,17 +11,18 @@ import (
 	"net/textproto"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 	"time_capsule_memories/internal/config"
 	"time_capsule_memories/internal/models"
 )
 
-// Функция для создания MIME-сообщения с вложениями
+// createMessage creates a MIME message with attachments and returns it as a byte slice.
 func createMessage(from, subject, body, to string, attachments []models.FileObject) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
-	// Заголовки письма
+	// Email headers
 	headers := map[string]string{
 		"From":         from,
 		"To":           to,
@@ -34,7 +35,7 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 	}
 	buf.WriteString("\r\n")
 
-	// Добавление тела письма
+	// Adding email body
 	part, err := writer.CreatePart(map[string][]string{
 		"Content-Type": {"text/plain; charset=UTF-8"},
 	})
@@ -43,12 +44,12 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 	}
 	part.Write([]byte(body))
 
-	// Добавление вложений
+	// Adding attachments
 	for _, attachment := range attachments {
-		// Сохраняем файл локально для отладки
+		// Debugging step: Save attachment as a file locally (can be commented out in production)
 		// saveAsFile(attachment)
 
-		// Создаем часть для вложения
+		// Creating attachment part
 		h := make(textproto.MIMEHeader)
 		h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(attachment.FileName)))
 		h.Set("Content-Type", attachment.ContentType)
@@ -58,7 +59,7 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 			return nil, fmt.Errorf("failed to create attachment: %v", err)
 		}
 
-		// Кодирование вложения в base64
+		// Base64 encoding for attachment content
 		encodedContent := base64.StdEncoding.EncodeToString(attachment.Content)
 		_, err = part.Write([]byte(encodedContent))
 		if err != nil {
@@ -66,7 +67,7 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 		}
 	}
 
-	// Завершаем запись MIME
+	// Finalizing MIME writer
 	err = writer.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to close writer: %v", err)
@@ -75,48 +76,64 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 	return buf.Bytes(), nil
 }
 
+// saveAsFile saves the attachment file locally for debugging purposes.
 func saveAsFile(attachment models.FileObject) {
-	// Метод для сохранения файла для отладки
-
-	// Создаем директорию, если ее нет
+	// Create directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(attachment.FileName), os.ModePerm); err != nil {
-		log.Fatalf("Ошибка при создании директории %s: %v", filepath.Dir(attachment.FileName), err)
+		log.Fatalf("Error creating directory %s: %v", filepath.Dir(attachment.FileName), err)
 	}
-	// Сохраняем файл
+	// Save file locally
 	err := os.WriteFile(attachment.FileName, attachment.Content, 0644)
 	if err != nil {
-		log.Fatalf("Ошибка при сохранении файла %s: %v", attachment.FileName, err)
+		log.Fatalf("Error saving file %s: %v", attachment.FileName, err)
 	}
 }
 
-// Функция для отправки письма через SMTP
+// SendEmail sends an email with the provided subject, body, and attachments.
 func SendEmail(subject, body, to string, attachments []models.FileObject) error {
+	// Get configuration values
 	config := config.GetConfig()
+
+	// Create the message (MIME format)
 	message, err := createMessage(config.SMTPFrom, subject, body, to, attachments)
 	if err != nil {
 		return fmt.Errorf("failed to create message: %v", err)
 	}
 
-	// Настройка аутентификации
-	auth := smtp.PlainAuth("", config.SMTPFrom, config.SMTPPassword, config.SMTPHost)
-
-	// Логирование перед отправкой
+	// Logging attempt to send email
 	fmt.Println("Attempting to send email...")
 
-	// Создание контекста с таймаутом 7 секунд. Если через 7 секунд операция не завершится, то будет возвращена ошибка
+	// Set timeout duration for SMTP operation
 	timeout := time.Duration(config.SMTPTimeout) * time.Second
 
-	// Создание контекста с таймаутом
+	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Канал для ошибок
+	// Channel for sending result
 	errCh := make(chan error, 1)
 
 	go func() {
-		errCh <- smtp.SendMail(config.SMTPHost+":"+config.SMTPPort, auth, config.SMTPFrom, []string{to}, message)
+		addr := fmt.Sprintf("%s:%s", config.SMTPHost, config.SMTPPort)
+
+		// Determine if this is MailHog (no TLS/STARTTLS)
+		if strings.EqualFold(config.SMTPHost, "mailhog") {
+			// Send without TLS and without auth (MailHog accepts open relay on 1025)
+			errCh <- smtp.SendMail(addr, nil, config.SMTPFrom, []string{to}, message)
+			return
+		}
+
+		// For other SMTP hosts, set up auth if credentials provided
+		var auth smtp.Auth
+		if config.SMTPFrom != "" && config.SMTPPassword != "" {
+			auth = smtp.PlainAuth("", config.SMTPFrom, config.SMTPPassword, config.SMTPHost)
+		}
+
+		// Send email (will negotiate TLS/STARTTLS if supported)
+		errCh <- smtp.SendMail(addr, auth, config.SMTPFrom, []string{to}, message)
 	}()
 
+	// Wait for send result or timeout
 	select {
 	case err := <-errCh:
 		if err != nil {

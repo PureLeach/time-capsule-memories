@@ -9,16 +9,17 @@ import (
 	"time_capsule_memories/internal/models"
 )
 
-func CreateCapsule(capsule *models.CreateCapsuleRequest) (*models.CapsuleResponse, error) {
+// CreateCapsule creates a new capsule in the database and returns the created capsule data.
+func CreateCapsule(capsule *models.CreateCapsuleRequest) (createdCapsule *models.CapsuleResponse, err error) {
 	query := `
 	INSERT INTO capsules (sender_name, send_at, message, recipient_email, files_folder_UUID)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, sender_name, created_at, send_at, message, recipient_email, files_folder_UUID, status;
     `
 
-	createdCapsule := &models.CapsuleResponse{}
+	createdCapsule = &models.CapsuleResponse{}
 
-	err := database.DB.QueryRow(
+	err = database.DB.QueryRow(
 		context.Background(),
 		query,
 		capsule.SenderName,
@@ -45,7 +46,8 @@ func CreateCapsule(capsule *models.CreateCapsuleRequest) (*models.CapsuleRespons
 	return createdCapsule, nil
 }
 
-func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
+// GetCapsulesByToday retrieves all capsules scheduled for today with a "waiting" status.
+func GetCapsulesByToday() (capsules []*models.CapsuleResponse, err error) {
 	currentDate := time.Now().Format("2006-01-02")
 
 	query := `
@@ -53,8 +55,6 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 	FROM capsules
 	WHERE send_at::date = $1 AND status = 'waiting';
 	`
-
-	var capsules []*models.CapsuleResponse
 
 	rows, err := database.DB.Query(
 		context.Background(),
@@ -67,10 +67,10 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 	}
 	defer rows.Close()
 
-	// Маппинг данных из строки результата в структуру
+	// Mapping rows to capsule objects
 	for rows.Next() {
 		capsule := &models.CapsuleResponse{}
-		err := rows.Scan(
+		if err := rows.Scan(
 			&capsule.ID,
 			&capsule.SenderName,
 			&capsule.CreatedAt,
@@ -79,8 +79,7 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 			&capsule.RecipientEmail,
 			&capsule.FilesFolderUUID,
 			&capsule.Status,
-		)
-		if err != nil {
+		); err != nil {
 			log.Printf("Error scanning row into CapsuleResponse: %v", err)
 			return nil, err
 		}
@@ -95,6 +94,7 @@ func GetCapsulesByToday() ([]*models.CapsuleResponse, error) {
 	return capsules, nil
 }
 
+// UpdateCapsuleStatusByID updates the status of a capsule by its ID.
 func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
 	query := `
 	UPDATE capsules
@@ -102,7 +102,7 @@ func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
 	WHERE id = $2;
 	`
 
-	// Выполняем обновление статуса
+	// Execute the status update
 	_, err := database.DB.Exec(
 		context.Background(),
 		query,
@@ -110,7 +110,7 @@ func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
 		capsuleID,
 	)
 	if err != nil {
-		log.Printf("Error updating capsule status: %v", err)
+		log.Printf("Error updating capsule status for capsule ID %d: %v", capsuleID, err)
 		return err
 	}
 
