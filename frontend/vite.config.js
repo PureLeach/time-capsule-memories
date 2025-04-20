@@ -9,11 +9,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': '/src', // Для удобных импортов
+      '@': '/src',
     },
   },
   server: {
-    port: 8001, // Укажите желаемый порт
-    strictPort: true, // Убедитесь, что Vite будет работать только на этом порту
+    port: 8001,
+    strictPort: true,
   },
 });

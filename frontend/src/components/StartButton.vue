@@ -16,15 +16,27 @@ export default {
       type: String,
       required: true,
     },
+    delay: {
+      type: Number,
+      default: 1500,  // Default delay time
+    },
   },
   components: { FallingStars },
   setup(props) {
     const router = useRouter();
     const stars = ref(null);
 
-    const handleClick = () => {
+    const triggerStars = () => {
       if (stars.value) stars.value.trigger();
-      setTimeout(() => router.push(props.to), 1500);
+    };
+
+    const navigate = () => {
+      setTimeout(() => router.push(props.to), props.delay);
+    };
+
+    const handleClick = () => {
+      triggerStars();
+      navigate();
     };
 
     return { handleClick, stars };
@@ -32,29 +44,26 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
-/* Основной стиль для кнопки */
+/* Main style for the button */
 .start-button {
   position: relative;
   padding: 20px 40px;
-  /* Увеличен размер кнопки */
   border-radius: 25px;
-  font-size: 18px; /* Увеличен шрифт */
+  font-size: 18px;
   font-weight: bold;
   color: #fff;
-  background: linear-gradient(135deg, #1d2a6c, #0d1b2a); /* Тёмно-синий градиент */
+  background: linear-gradient(135deg, #1d2a6c, #0d1b2a);
   border: 2px solid #ffffff;
   text-transform: uppercase;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
   transition: all 0.3s ease;
   overflow: hidden;
   cursor: pointer;
-  width: 150px; /* Фиксированная ширина */
+  min-width: 150px;
+  max-width: 300px;
 }
 
-/* Эффект неонового свечения */
 .start-button::before {
   content: '';
   position: absolute;
@@ -68,10 +77,9 @@ export default {
   opacity: 0.8;
 }
 
-/* Плавный эффект при наведении */
+/* Smooth hover effect */
 .start-button:hover {
   background: #333;
   box-shadow: 0 0 20px rgba(255, 255, 255, 1);
 }
-
 </style>

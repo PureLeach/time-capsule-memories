@@ -29,6 +29,7 @@ Time Capsule Memories is a personal pet-project designed to store and send your 
 - minio - http://minio.localhost
 - pgadmin - http://pgadmin.localhost
 - MailHog - http://localhost:8025
+- traefik - http://localhost:8080/dashboard/#/
 
 ## Working with migrations (local)
 

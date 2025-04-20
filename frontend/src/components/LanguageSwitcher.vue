@@ -1,87 +1,60 @@
 <template>
   <div class="language-switcher">
-    <div
-      class="flag-container"
-      :class="{'flipping': isFlipping}"
-      @click="toggleLanguage"
-    >
-      <img
-        v-if="currentLocale === 'en'"
-        src="@/assets/flags/en.svg"
-        alt="English"
-        class="flag"
-      />
-      <img
-        v-if="currentLocale === 'ru'"
-        src="@/assets/flags/ru.svg"
-        alt="Russian"
-        class="flag"
-      />
+    <div class="flag-container" :class="{ flipping: isFlipping }" @click="toggleLanguage">
+      <img :src="flagSrc" :alt="flagAlt" class="flag" />
     </div>
   </div>
 </template>
 
 <script>
 import { useI18n } from 'vue-i18n';
-import { ref } from 'vue'; // Импортируем ref для создания реактивных данных
+import { ref, computed } from 'vue';
+import { useAppStore } from '@/store';
 
 export default {
+  name: 'LanguageSwitcher',
   setup() {
     const { locale } = useI18n();
-    const currentLocale = locale;
-    const isFlipping = ref(false); // Используем ref для реактивной переменной isFlipping
+    const appStore = useAppStore();
+    const isFlipping = ref(false);
 
-    const changeLanguage = (value) => {
-      locale.value = value;
-    };
+    const flagSrc = computed(() =>
+      appStore.language === 'en'
+        ? new URL('@/assets/flags/en.svg', import.meta.url).href
+        : new URL('@/assets/flags/ru.svg', import.meta.url).href
+    );
+
+    const flagAlt = computed(() => (appStore.language === 'en' ? 'English' : 'Russian'));
 
     const toggleLanguage = () => {
       isFlipping.value = true;
       setTimeout(() => {
-        const newLanguage = currentLocale.value === 'en' ? 'ru' : 'en';
-        changeLanguage(newLanguage);
+        const newLanguage = appStore.language === 'en' ? 'ru' : 'en';
+        appStore.setLanguage(newLanguage);
+        locale.value = newLanguage;
         isFlipping.value = false;
       }, 300);
     };
 
-    return { currentLocale, toggleLanguage, isFlipping };
+    return { isFlipping, flagSrc, flagAlt, toggleLanguage };
   },
 };
 </script>
 
 <style scoped>
-.language-switcher {
-  position: fixed; /* Фиксированное положение */
-  top: 10px; /* Отступ сверху */
-  right: 10px; /* Отступ справа */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-}
-
+.language-switcher { position: fixed; top: 10px; right: 10px; cursor: pointer; }
 .flag-container {
-  width: 30px; /* Уменьшаем размер */
-  height: 30px; /* Уменьшаем размер */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transition: background 0.3s ease;
+  width: 30px; height: 30px;
+  display: flex; justify-content: center; align-items: center;
+  border-radius: 50%; background: rgba(255,255,255,0.2);
+  transition: background 0.3s ease; perspective: 600px;
 }
-
-.flag-container:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
+.flag-container:hover { background: rgba(255,255,255,0.4); }
 .flag {
-  width: 20px; /* Уменьшаем размер иконки */
-  height: 20px; /* Уменьшаем размер иконки */
+  width: 20px; height: 20px;
   transition: transform 0.3s ease;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
-
-.flipping .flag {
-  transform: rotateY(180deg);
-}
+.flipping .flag { transform: rotateY(180deg); }
 </style>

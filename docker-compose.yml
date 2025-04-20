@@ -1,22 +1,21 @@
 version: "3.8"
 
 services:
-
   traefik:
     image: traefik:v2.10
     container_name: traefik
     command:
-      - "--api.insecure=true" # Панель управления Traefik
-      - "--providers.docker=true" # Автообнаружение сервисов Docker
-      - "--providers.docker.exposedbydefault=false" # Экспонировать только помеченные сервисы
-      - "--entrypoints.web.address=:80" # HTTP вход
+      - "--api.insecure=true" # Traefik Control Panel
+      - "--providers.docker=true" # Auto-discovery of Docker services
+      - "--providers.docker.exposedbydefault=false" # Expose only marked services
+      - "--entrypoints.web.address=:80"
     ports:
-      - "80:80"     # HTTP для всех сервисов
-      - "8080:8080" # Панель управления Traefik
+      - "80:80" # HTTP for all services
+      - "8080:8080" # Traefik Control Panel
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Доступ к Docker API
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     networks:
-      time-capsule-network: # Общая сеть для маршрутизации
+      time-capsule-network: # Shared network for routing
         aliases:
           - ${MINIO_ENDPOINT}
 
@@ -92,7 +91,6 @@ services:
       - "traefik.http.routers.minio-api.service=minio-api-svc"
       - "traefik.http.services.minio-api-svc.loadbalancer.server.port=9000"
 
-  
   backend:
     container_name: time-capsule-memories-backend
     build:
@@ -120,6 +118,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    env_file:
+      - ./.env
     volumes:
       - type: bind
         source: ./.env

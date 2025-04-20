@@ -39,20 +39,20 @@
 
 
       </el-form>
-          <!-- Submit and Reset Buttons -->
-          <el-form-item class="form-buttons">
-          <div class="submit-reset-container">
-            <el-button type="primary" @click="submitForm" class="submit-button">
-              {{ $t('form.submit') }}
-            </el-button>
-            <el-button type="default" @click="resetForm" class="reset-button">
-              {{ $t('form.reset') }}
-            </el-button>
-          </div>
-        </el-form-item>
-  
+      <!-- Submit and Reset Buttons -->
+      <el-form-item class="form-buttons">
+        <div class="submit-reset-container">
+          <el-button type="primary" @click="submitForm" class="submit-button">
+            {{ $t('form.submit') }}
+          </el-button>
+          <el-button type="default" @click="resetForm" class="reset-button">
+            {{ $t('form.reset') }}
+          </el-button>
+        </div>
+      </el-form-item>
+
     </el-card>
-  
+
   </main-layout>
 </template>
 
@@ -121,12 +121,12 @@ export default {
         console.error("Presigned URL is missing or invalid");
         return Promise.reject(new Error("Presigned URL is not available"));
       }
-      
+
       const s3Axios = axios.create();
       try {
         const response = await s3Axios.put(this.presignedUrl, file, {
           headers: {
-        "Content-Type": file.type,
+            "Content-Type": file.type,
           },
         });
         console.log("File uploaded successfully", response);
@@ -134,7 +134,7 @@ export default {
         console.error("Error uploading file to S3:", error.message || error);
         throw error;
       }
-        },
+    },
     async beforeUpload(file) {
       const arrayBuffer = await file.arrayBuffer();
       const type = await fileTypeFromBuffer(arrayBuffer);
@@ -190,10 +190,9 @@ export default {
 
 
 <style scoped>
-
-/* Основная форма */
+/* The main form */
 .form-card {
-  display: flex; 
+  display: flex;
   max-width: 530px;
   margin: 0 auto;
   margin-top: 50px;
@@ -209,7 +208,7 @@ export default {
   border: none;
 }
 
-/* Лейблы */
+/* Labels */
 .el-form-item {
   display: flex;
   align-items: center;
@@ -220,7 +219,7 @@ export default {
   color: #dfeefa;
 }
 
-/* Лейблы - выравнивание по правому краю */
+/* Labels - right alignment */
 .el-form-item .el-form-item__label {
   text-align: right;
   padding-right: 20px;
@@ -243,7 +242,7 @@ export default {
 }
 
 
-/* Прикрепленные файлы */
+/* Attached files */
 
 .attachment-container {
   display: flex;
@@ -253,19 +252,19 @@ export default {
 
 ::v-deep(.el-upload-list__item-preview) {
   display: none !important;
-  /* Полностью скрывает иконку preview */
+  /* Completely hides the preview icon. */
 }
 
 ::v-deep(.el-upload-list__item-delete) {
   position: absolute;
-  /* Абсолютное позиционирование для настройки расположения */
+  /* Absolute positioning to adjust the location */
   transform: translate(-50%, 0);
-  /* Сдвиг для точного центрирования */
+  /* Shift for precise centering */
 }
 
 
 
-/* Кнопки */
+/* Buttons */
 
 .form-buttons {
   display: flex;
@@ -311,10 +310,4 @@ export default {
   background: linear-gradient(45deg, rgba(234, 234, 234, 1) 0%, rgba(255, 255, 255, 1) 100%);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
-
-
-
-
-
-
 </style>

@@ -12,7 +12,7 @@
           </button>
           <transition name="fade" @before-enter="beforeEnter" @enter="enter" @leave="leave">
             <div v-if="isOpen" class="spoiler-content">
-              <!-- Используем v-html для рендера HTML -->
+              <!-- Using v-html for HTML rendering -->
               <p v-html="$t('about.spoiler.text')"></p>
             </div>
           </transition>
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <!-- Всплывающее окно для успешной отправки -->
+    <!-- Pop-up window for successful sending -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
         <h2 class="modal-title">{{ $t('about.modal.title') }}</h2>
@@ -37,7 +37,7 @@
     </div>
 
 
-    <!-- Всплывающее окно для ошибки -->
+    <!-- A pop-up window for an error -->
     <div v-if="showErrorModal" class="modal">
       <div class="modal-content">
         <h2 class="modal-title">{{ $t('about.modal.errorTitle') }}</h2>
@@ -60,22 +60,22 @@ export default {
   },
   data() {
     return {
-      isOpen: false, // Состояние спойлера
-      message: '', // Хранение текста сообщения
-      showModal: false, // Состояние модального окна успешной отправки
-      showErrorModal: false, // Состояние модального окна ошибки
+      isOpen: false, // Spoiler Status
+      message: '', // Storing the message text
+      showModal: false, // The status of the successful sending modal window
+      showErrorModal: false, // The status of the error modal window
     };
   },
   methods: {
     toggleSpoiler() {
-      this.isOpen = !this.isOpen; // Переключение состояния спойлера
+      this.isOpen = !this.isOpen; // Switching spoiler status
     },
     beforeEnter(el) {
       el.style.opacity = 0;
       el.style.transform = 'translateY(-10px)';
     },
     enter(el, done) {
-      el.offsetHeight; // Форсируем перерисовку
+      el.offsetHeight; // Forcing a redraw
       el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
       el.style.opacity = 1;
       el.style.transform = 'translateY(0)';
@@ -89,7 +89,7 @@ export default {
     },
     async handleSubmit() {
       if (!this.message.trim()) {
-        this.showErrorModal = true; // Показываем модальное окно с ошибкой
+        this.showErrorModal = true; // Showing the modal window with an error
         return;
       }
 
@@ -108,7 +108,7 @@ export default {
         if (response.ok) {
           const result = await response.json();
           console.log('Feedback submitted successfully', result);
-          this.showModal = true; // Показываем модальное окно с успехом
+          this.showModal = true; // Showing the modal window with success
         } else {
           console.error('Failed to submit feedback', response);
           alert('Failed to submit feedback, please try again later.');
@@ -119,16 +119,15 @@ export default {
       }
     },
     redirectHome(isSuccess) {
-  if (isSuccess) {
-    this.$router.push('/'); // Редирект на главную страницу, если успех
-  }
-  this.showModal = false;  // Закрываем модальное окно после редиректа
-  this.showErrorModal = false;  // Закрываем модальное окно ошибки
-}
+      if (isSuccess) {
+        this.$router.push('/'); // Redirect to the main page if successful
+      }
+      this.showModal = false;  // Closing the modal window after the redirect
+      this.showErrorModal = false;  // Closing the error modal window
+    }
 
   }
 };
-
 
 
 </script>
@@ -195,7 +194,7 @@ export default {
   content: '';
   position: absolute;
   left: -5px;
-  /* Сдвигает стрелку влево */
+  /* Moves the arrow to the left */
   top: 30%;
   transform: translateY(-50%);
   width: 10px;
@@ -224,9 +223,9 @@ export default {
   font-size: 1rem;
   line-height: 1.5;
   width: 100%;
-  /* Убедитесь, что контент спойлера будет растягиваться на всю доступную ширину */
+  /* Make sure that the spoiler content will stretch to its full available width. */
   box-sizing: border-box;
-  /* Чтобы паддинги не нарушали размер */
+  /* So that the paddings do not violate the size */
 }
 
 .spoiler-content-enter-active,
@@ -294,7 +293,7 @@ export default {
 
 
 
-/* Стиль для модального окна */
+/* The style for the modal window */
 .modal {
   position: fixed;
   top: 0;
@@ -309,7 +308,7 @@ export default {
 }
 
 .modal-content {
-  background: #2c4e79;  
+  background: #2c4e79;
   padding: 1rem;
   border-radius: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);

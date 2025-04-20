@@ -34,7 +34,6 @@ export default {
   box-sizing: border-box;
   font-family: 'Arial', sans-serif;
   color: white;
-  /* background: url('https://example.com/space-background.jpg') no-repeat center center fixed; */
 }
 
 h1 {

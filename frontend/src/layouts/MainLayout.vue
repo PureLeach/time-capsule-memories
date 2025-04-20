@@ -59,5 +59,4 @@ export default {
   font-size: 1rem;
   letter-spacing: 0.5px;
 }
-
 </style>
