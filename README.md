@@ -4,6 +4,11 @@ Time Capsule Memories is a personal pet-project designed to store and send your 
 
 ---
 
+## Architecture
+![architecture](./architecture.png)
+
+---
+
 ## Quick Start
 
 1. Copy the example environment file:
