@@ -124,12 +124,11 @@ export default {
 
       const s3Axios = axios.create();
       try {
-        const response = await s3Axios.put(this.presignedUrl, file, {
+        await s3Axios.put(this.presignedUrl, file, {
           headers: {
             "Content-Type": file.type,
           },
         });
-        console.log("File uploaded successfully", response);
       } catch (error) {
         console.error("Error uploading file to S3:", error.message || error);
         throw error;
@@ -167,8 +166,7 @@ export default {
 
           axios
             .post("/capsules", data)
-            .then((response) => {
-              console.log("Form submitted successfully", response);
+            .then(() => {
               this.resetForm();
             })
             .catch((error) => {

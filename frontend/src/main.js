@@ -11,11 +11,10 @@ const app = createApp(App);
 const pinia = createPinia();
 
 app
-  .use(pinia)             // устанавливаем Pinia
+  .use(pinia)
   .use(router)
-  .use(i18n)              // устанавливаем i18n
+  .use(i18n)
   .use(ElementPlus)
   .mount('#app');
 
-// Инициализируем языковую логику после монтирования приложения
 initializeLanguage();
