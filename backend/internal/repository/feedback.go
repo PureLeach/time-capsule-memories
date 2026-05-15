@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/models"
@@ -30,7 +30,7 @@ func CreateUserFeedback(feedback *models.CreateFeedbackRequest) (createdFeedback
 	)
 
 	if err != nil {
-		log.Printf("Error creating feedback in the database: %v", err)
+		slog.Error("failed to create feedback", "error", err)
 		return nil, err
 	}
 

@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -40,13 +40,18 @@ type Config struct {
 
 	// Scheduler
 	CronCapsuleDispatch string `env:"CRON_CAPSULE_DISPATCH"`
+
+	// Logging
+	LogLevel string `env:"LOG_LEVEL" env-default:"info"`
 }
 
 func LoadConfig() (*Config, error) {
 	var config Config
 
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, skipping...")
+		// Logging may not be initialised yet; this falls through the default
+		// slog text handler and is normally filtered at info level.
+		slog.Debug(".env file not loaded; falling back to environment", "error", err)
 	}
 
 	if err := cleanenv.ReadEnv(&config); err != nil {

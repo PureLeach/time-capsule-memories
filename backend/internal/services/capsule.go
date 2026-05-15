@@ -2,7 +2,7 @@ package services
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/repository"
@@ -11,18 +11,23 @@ import (
 // ProcessCapsule processes the capsule, retrieves files from MinIO, sends an email with the files,
 // and updates the capsule's status to "done" in the database.
 func ProcessCapsule(capsule *models.CapsuleResponse) error {
-	log.Printf("Processing capsule with ID: %d", capsule.ID)
+	slog.Info("processing capsule", "capsule_id", capsule.ID)
 
-	// If the FilesFolderUUID is provided, log it.
 	if *capsule.FilesFolderUUID != "" {
-		log.Printf("Files Folder UUID: %s", *capsule.FilesFolderUUID)
+		slog.Debug("capsule has attachments folder",
+			"capsule_id", capsule.ID,
+			"folder_uuid", *capsule.FilesFolderUUID,
+		)
 	}
 
 	// Retrieve files from MinIO
 	attachments, err := minio_client.GetFilesInDirectory(*capsule.FilesFolderUUID)
 	if err != nil {
-		// Fatal log is too strong here, use a normal error log and return the error instead.
-		log.Printf("Error retrieving files from directory %s: %v", *capsule.FilesFolderUUID, err)
+		slog.Error("failed to retrieve capsule attachments",
+			"capsule_id", capsule.ID,
+			"folder_uuid", *capsule.FilesFolderUUID,
+			"error", err,
+		)
 		return fmt.Errorf("error retrieving files from MinIO: %v", err)
 	}
 
@@ -30,7 +35,6 @@ func ProcessCapsule(capsule *models.CapsuleResponse) error {
 	subject := fmt.Sprintf("You've received a time capsule from %s", capsule.SenderName)
 
 	if err := SendEmail(subject, capsule.Message, capsule.RecipientEmail, attachments); err != nil {
-		log.Printf("Error details: %v", err)
 		return fmt.Errorf("error sending email: %v", err)
 	}
 
@@ -39,6 +43,6 @@ func ProcessCapsule(capsule *models.CapsuleResponse) error {
 		return fmt.Errorf("error updating capsule status: %v", err)
 	}
 
-	log.Println("Capsule processing completed")
+	slog.Info("capsule processing complete", "capsule_id", capsule.ID)
 	return nil
 }

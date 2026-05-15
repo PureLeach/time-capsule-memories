@@ -1,9 +1,10 @@
 package jobs
 
 import (
-	"log"
+	"log/slog"
 	"time"
 	"time_capsule_memories/internal/config"
+	"time_capsule_memories/internal/logging"
 
 	"github.com/robfig/cron/v3"
 )
@@ -16,7 +17,7 @@ func StartScheduler() {
 	// Load the timezone (e.g., UTC). Log an error and exit if it fails.
 	loc, err := time.LoadLocation("UTC")
 	if err != nil {
-		log.Fatalf("Failed to load timezone: %v", err) // Use log.Fatalf for immediate exit on critical errors
+		logging.Fatal("failed to load timezone", "error", err)
 	}
 
 	// Create a new cron scheduler with the specified timezone
@@ -27,12 +28,12 @@ func StartScheduler() {
 		JobCapsule() // Execute the capsule dispatch job
 	})
 	if err != nil {
-		log.Fatalf("Failed to schedule capsule dispatch job: %v", err)
+		logging.Fatal("failed to schedule capsule dispatch job", "error", err)
 	}
 
 	// Start the scheduler in a separate goroutine for asynchronous execution
 	go func() {
-		log.Println("[CRON] Scheduler started successfully.")
+		slog.Info("scheduler started", "job", "capsule_dispatch")
 		c.Start()
 	}()
 

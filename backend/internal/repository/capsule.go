@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"time_capsule_memories/internal/database"
@@ -39,7 +39,7 @@ func CreateCapsule(capsule *models.CreateCapsuleRequest) (createdCapsule *models
 	)
 
 	if err != nil {
-		log.Printf("Error creating capsule in the database: %v", err)
+		slog.Error("failed to create capsule", "error", err)
 		return nil, err
 	}
 
@@ -62,7 +62,7 @@ func GetCapsulesByToday() (capsules []*models.CapsuleResponse, err error) {
 		currentDate,
 	)
 	if err != nil {
-		log.Printf("Error querying capsules from the database: %v", err)
+		slog.Error("failed to query capsules", "error", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -80,14 +80,14 @@ func GetCapsulesByToday() (capsules []*models.CapsuleResponse, err error) {
 			&capsule.FilesFolderUUID,
 			&capsule.Status,
 		); err != nil {
-			log.Printf("Error scanning row into CapsuleResponse: %v", err)
+			slog.Error("failed to scan capsule row", "error", err)
 			return nil, err
 		}
 		capsules = append(capsules, capsule)
 	}
 
 	if err := rows.Err(); err != nil {
-		log.Printf("Error iterating over rows: %v", err)
+		slog.Error("failed to iterate capsule rows", "error", err)
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
 		capsuleID,
 	)
 	if err != nil {
-		log.Printf("Error updating capsule status for capsule ID %d: %v", capsuleID, err)
+		slog.Error("failed to update capsule status", "capsule_id", capsuleID, "error", err)
 		return err
 	}
 

@@ -5,11 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
 	"time_capsule_memories/internal/config"
+	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/models"
 
 	"github.com/minio/minio-go/v7"
@@ -31,10 +32,10 @@ func GetMinioClient() (*minio.Client, error) {
 			Secure: config.GetConfig().MinioUseSSL,
 		})
 		if err != nil {
-			log.Fatalf("Error initializing MinIO client: %v", err)
+			logging.Fatal("minio client init failed", "error", err)
 		}
 
-		log.Printf("MinIO client initialized, endpoint: %s", config.GetConfig().MinioEndpoint)
+		slog.Info("minio client initialized", "endpoint", config.GetConfig().MinioEndpoint)
 	})
 
 	return minioClientInstance, nil
@@ -45,32 +46,32 @@ func MinioInit() {
 	bucketName := config.GetConfig().MinioBucketName
 	minioClient, err := GetMinioClient()
 	if err != nil {
-		log.Fatalf("Error getting MinIO client: %v", err)
+		logging.Fatal("minio client unavailable", "error", err)
 	}
 
 	// Check if MinIO connection is successful
 	_, err = minioClient.ListBuckets(context.Background())
 	if err != nil {
-		log.Fatalf("Error connecting to MinIO: %v", err)
+		logging.Fatal("minio connection failed", "error", err)
 	}
-	log.Println("Successfully connected to MinIO")
+	slog.Info("minio connection established")
 
 	// Check if the bucket exists
 	exists, err := minioClient.BucketExists(context.Background(), bucketName)
 	if err != nil {
-		log.Fatalf("Error checking if bucket %s exists: %v", bucketName, err)
+		logging.Fatal("minio bucket lookup failed", "bucket", bucketName, "error", err)
 	}
 
 	// Create bucket if it does not exist
 	if !exists {
-		log.Printf("Bucket %s not found. Attempting to create...", bucketName)
+		slog.Info("minio bucket missing; creating", "bucket", bucketName)
 		err = minioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{Region: ""})
 		if err != nil {
-			log.Fatalf("Failed to create bucket %s: %v", bucketName, err)
+			logging.Fatal("minio bucket creation failed", "bucket", bucketName, "error", err)
 		}
-		log.Printf("Bucket %s created successfully", bucketName)
+		slog.Info("minio bucket created", "bucket", bucketName)
 	} else {
-		log.Printf("Bucket %s already exists", bucketName)
+		slog.Info("minio bucket present", "bucket", bucketName)
 	}
 }
 

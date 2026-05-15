@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 	"time_capsule_memories/internal/config"
 
@@ -16,7 +16,7 @@ var DB *pgxpool.Pool
 func Connect() error {
 	cfg := config.GetConfig()
 
-	log.Println("Connecting to database:", cfg.PostgresURL)
+	slog.Info("connecting to database", "host", cfg.DBHost, "database", cfg.DBName)
 
 	var err error
 	DB, err = pgxpool.New(context.Background(), cfg.PostgresURL)
@@ -36,7 +36,7 @@ func Connect() error {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Println("Database connection established successfully")
+	slog.Info("database connection established")
 	return nil
 }
 
@@ -44,6 +44,6 @@ func Connect() error {
 func Close() {
 	if DB != nil {
 		DB.Close()
-		log.Println("Database connection closed")
+		slog.Info("database connection closed")
 	}
 }

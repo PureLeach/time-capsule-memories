@@ -10,10 +10,12 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 
+	"time_capsule_memories/internal/config"
 	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/jobs"
+	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/middleware"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/routes"
@@ -26,35 +28,29 @@ import (
 )
 
 func main() {
-	// Initialize the database connection
+	logging.Init(config.GetConfig().LogLevel)
+
 	if err := database.Connect(); err != nil {
-		log.Fatalf("Database connection failed: %v", err)
+		logging.Fatal("database connection failed", "error", err)
 	}
 	defer database.Close()
 
-	// Initialize the MinIO client
 	minio_client.MinioInit()
 
-	// Start background jobs (e.g., scheduled tasks)
 	jobs.StartScheduler()
 
-	// Create a new Echo instance
 	e := echo.New()
 	e.Logger.SetLevel(0)
 
-	// Register global middleware
 	e.Use(middleware.CORSConfig())
 
-	// Register API routes
 	routes.RegisterFileRoutes(e)
 	routes.RegisterCapsuleRoutes(e)
 	routes.RegisterFeedbackRoutes(e)
 	routes.RegisterEmailRoutes(e)
 
-	// Swagger documentation endpoint
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
-	// Start the HTTP server
-	log.Println("Starting server on port :8000")
+	slog.Info("starting HTTP server", "addr", ":8000")
 	e.Logger.Fatal(e.Start(":8000"))
 }
