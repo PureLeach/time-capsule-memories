@@ -1,42 +1,33 @@
 package jobs
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 	"time_capsule_memories/internal/config"
-	"time_capsule_memories/internal/logging"
 
 	"github.com/robfig/cron/v3"
 )
 
-// StartScheduler initializes and starts the cron scheduler for recurring tasks.
-func StartScheduler() {
-	// Fetch the configuration settings
+// StartScheduler initialises the cron scheduler, registers the capsule
+// dispatch job, and starts ticking. The returned *cron.Cron lets the caller
+// drain in-flight jobs at shutdown via c.Stop().
+func StartScheduler() (*cron.Cron, error) {
 	cfg := config.GetConfig()
 
-	// Load the timezone (e.g., UTC). Log an error and exit if it fails.
 	loc, err := time.LoadLocation("UTC")
 	if err != nil {
-		logging.Fatal("failed to load timezone", "error", err)
+		return nil, fmt.Errorf("load timezone: %w", err)
 	}
 
-	// Create a new cron scheduler with the specified timezone
 	c := cron.New(cron.WithLocation(loc))
 
-	// Add the capsule dispatch job with the cron expression from the configuration
-	_, err = c.AddFunc(cfg.CronCapsuleDispatch, func() {
-		JobCapsule() // Execute the capsule dispatch job
-	})
-	if err != nil {
-		logging.Fatal("failed to schedule capsule dispatch job", "error", err)
+	if _, err := c.AddFunc(cfg.CronCapsuleDispatch, JobCapsule); err != nil {
+		return nil, fmt.Errorf("schedule capsule dispatch: %w", err)
 	}
 
-	// Start the scheduler in a separate goroutine for asynchronous execution
-	go func() {
-		slog.Info("scheduler started", "job", "capsule_dispatch")
-		c.Start()
-	}()
+	c.Start()
+	slog.Info("scheduler started", "job", "capsule_dispatch", "spec", cfg.CronCapsuleDispatch)
 
-	// Ensure the scheduler is stopped when the program exits
-	defer c.Stop()
+	return c, nil
 }

@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 	"time_capsule_memories/internal/config"
-	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/models"
 
 	"github.com/minio/minio-go/v7"
@@ -20,59 +19,58 @@ import (
 var (
 	minioClientInstance *minio.Client
 	once                sync.Once
+	initErr             error
 )
 
-// GetMinioClient returns a Singleton instance of the MinIO client.
+// GetMinioClient returns a Singleton instance of the MinIO client. If the
+// underlying constructor fails, the same error is returned on every call so
+// callers can decide how to react rather than killing the process.
 func GetMinioClient() (*minio.Client, error) {
-	// Use sync.Once to ensure the client is initialized only once
 	once.Do(func() {
-		var err error
-		minioClientInstance, err = minio.New(config.GetConfig().MinioEndpoint, &minio.Options{
-			Creds:  credentials.NewStaticV4(config.GetConfig().MinioAccessKey, config.GetConfig().MinioSecretKey, ""),
-			Secure: config.GetConfig().MinioUseSSL,
+		cfg := config.GetConfig()
+		minioClientInstance, initErr = minio.New(cfg.MinioEndpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
+			Secure: cfg.MinioUseSSL,
 		})
-		if err != nil {
-			logging.Fatal("minio client init failed", "error", err)
+		if initErr != nil {
+			return
 		}
-
-		slog.Info("minio client initialized", "endpoint", config.GetConfig().MinioEndpoint)
+		slog.Info("minio client initialized", "endpoint", cfg.MinioEndpoint)
 	})
 
-	return minioClientInstance, nil
+	return minioClientInstance, initErr
 }
 
-// MinioInit initializes MinIO and creates the bucket if it doesn't exist.
-func MinioInit() {
+// MinioInit verifies connectivity and ensures the configured bucket exists.
+// Errors bubble up so main can decide between retry, log-and-exit, or
+// degraded-mode operation.
+func MinioInit(ctx context.Context) error {
 	bucketName := config.GetConfig().MinioBucketName
 	minioClient, err := GetMinioClient()
 	if err != nil {
-		logging.Fatal("minio client unavailable", "error", err)
+		return fmt.Errorf("minio client init: %w", err)
 	}
 
-	// Check if MinIO connection is successful
-	_, err = minioClient.ListBuckets(context.Background())
-	if err != nil {
-		logging.Fatal("minio connection failed", "error", err)
+	if _, err := minioClient.ListBuckets(ctx); err != nil {
+		return fmt.Errorf("minio list buckets: %w", err)
 	}
 	slog.Info("minio connection established")
 
-	// Check if the bucket exists
-	exists, err := minioClient.BucketExists(context.Background(), bucketName)
+	exists, err := minioClient.BucketExists(ctx, bucketName)
 	if err != nil {
-		logging.Fatal("minio bucket lookup failed", "bucket", bucketName, "error", err)
+		return fmt.Errorf("minio bucket lookup %q: %w", bucketName, err)
 	}
 
-	// Create bucket if it does not exist
 	if !exists {
 		slog.Info("minio bucket missing; creating", "bucket", bucketName)
-		err = minioClient.MakeBucket(context.Background(), bucketName, minio.MakeBucketOptions{Region: ""})
-		if err != nil {
-			logging.Fatal("minio bucket creation failed", "bucket", bucketName, "error", err)
+		if err := minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
+			return fmt.Errorf("minio bucket create %q: %w", bucketName, err)
 		}
 		slog.Info("minio bucket created", "bucket", bucketName)
 	} else {
 		slog.Info("minio bucket present", "bucket", bucketName)
 	}
+	return nil
 }
 
 // GeneratePresignedUploadURL generates a presigned URL for uploading a file to MinIO.
