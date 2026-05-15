@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/services"
@@ -37,10 +38,15 @@ func SendTestEmail(c echo.Context) error {
 		})
 	}
 
+	log := logging.FromContext(c.Request().Context())
+
 	// Fetch attachments from MinIO
 	attachments, err := minio_client.GetFilesInDirectory(*emailData.FilesFolderUUID)
 	if err != nil {
-		c.Logger().Errorf("Failed to get files from directory %s: %v", *emailData.FilesFolderUUID, err)
+		log.Error("failed to get files from directory",
+			"folder_uuid", *emailData.FilesFolderUUID,
+			"error", err,
+		)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Could not retrieve attachments",
 		})
@@ -48,7 +54,7 @@ func SendTestEmail(c echo.Context) error {
 
 	// Send the email
 	if err := services.SendEmail(emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
-		c.Logger().Errorf("Failed to send email: %v", err)
+		log.Error("failed to send email", "error", err)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Could not send email",
 		})

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/validators"
@@ -42,7 +43,10 @@ func GeneratePresignedURLHandler(c echo.Context) error {
 	// Generate a presigned upload URL valid for 1 hour
 	presignedURL, err := minio_client.GeneratePresignedUploadURL(fmt.Sprintf("%s/%s", directory, fileName), time.Hour)
 	if err != nil {
-		c.Logger().Errorf("Failed to generate presigned URL: %v", err)
+		logging.FromContext(c.Request().Context()).Error("failed to generate presigned URL",
+			"directory", directory,
+			"error", err,
+		)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Could not generate presigned URL",
 		})

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/repository"
 	"time_capsule_memories/internal/validators"
@@ -39,7 +40,7 @@ func CreateFeedback(c echo.Context) error {
 	// Store feedback in the database
 	createdFeedback, err := repository.CreateUserFeedback(&feedback)
 	if err != nil {
-		c.Logger().Errorf("Failed to create feedback: %v", err)
+		logging.FromContext(c.Request().Context()).Error("failed to create feedback", "error", err)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Failed to create feedback",
 		})

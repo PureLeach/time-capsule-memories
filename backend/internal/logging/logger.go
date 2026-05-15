@@ -2,9 +2,17 @@
 package logging
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"strings"
+)
+
+// ctxKey is unexported so callers cannot accidentally collide with our context values.
+type ctxKey int
+
+const (
+	requestIDKey ctxKey = iota
 )
 
 // Init installs a JSON-formatted slog logger as the default. The level argument
@@ -23,6 +31,32 @@ func Init(level string) {
 func Fatal(msg string, args ...any) {
 	slog.Error(msg, args...)
 	os.Exit(1)
+}
+
+// WithRequestID returns a child context carrying the given request id.
+func WithRequestID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, requestIDKey, id)
+}
+
+// RequestIDFromContext returns the request id stored on ctx, or "" if absent.
+func RequestIDFromContext(ctx context.Context) string {
+	if id, ok := ctx.Value(requestIDKey).(string); ok {
+		return id
+	}
+	return ""
+}
+
+// FromContext returns a logger pre-populated with attributes pulled off ctx
+// (currently just request_id). Falls back to the default logger when ctx
+// carries nothing useful.
+func FromContext(ctx context.Context) *slog.Logger {
+	if ctx == nil {
+		return slog.Default()
+	}
+	if id := RequestIDFromContext(ctx); id != "" {
+		return slog.Default().With("request_id", id)
+	}
+	return slog.Default()
 }
 
 func parseLevel(s string) slog.Level {
