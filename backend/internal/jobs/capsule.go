@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"context"
 	"log/slog"
 	"strconv"
 	"sync"
@@ -10,6 +11,11 @@ import (
 	"time_capsule_memories/internal/services"
 )
 
+// capsuleDispatchTimeout is the per-capsule budget covering MinIO fetch, SMTP
+// delivery, and the status update. Generous on purpose — attachments are
+// pulled in full and base64-encoded before send.
+const capsuleDispatchTimeout = 2 * time.Minute
+
 // JobCapsule is a scheduled task that processes capsules scheduled for today's delivery date.
 func JobCapsule() {
 	// Record the job start time for monitoring purposes
@@ -17,7 +23,7 @@ func JobCapsule() {
 	slog.Info("capsule dispatch started", "started_at", startTime.Format(time.RFC3339))
 
 	// Fetch the capsules that are scheduled for delivery today
-	capsules, err := repository.GetCapsulesByToday()
+	capsules, err := repository.GetCapsulesByToday(context.Background())
 	if err != nil {
 		slog.Error("failed to fetch due capsules", "error", err)
 		return
@@ -42,7 +48,10 @@ func JobCapsule() {
 		go func(capsuleID string) {
 			defer wg.Done()
 
-			if err := services.ProcessCapsule(capsule); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), capsuleDispatchTimeout)
+			defer cancel()
+
+			if err := services.ProcessCapsule(ctx, capsule); err != nil {
 				slog.Error("failed to process capsule", "capsule_id", capsuleID, "error", err)
 			} else {
 				slog.Info("capsule processed", "capsule_id", capsuleID)

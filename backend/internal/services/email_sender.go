@@ -72,7 +72,10 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 }
 
 // SendEmail sends an email with the provided subject, body, and attachments.
-func SendEmail(subject, body, to string, attachments []models.FileObject) error {
+// ctx bounds the entire send; SendEmail layers its own SMTPTimeout on top so
+// a hung SMTP server can't outlive the configured budget even if the caller
+// passed a longer-lived context.
+func SendEmail(ctx context.Context, subject, body, to string, attachments []models.FileObject) error {
 	// Get configuration values
 	config := config.GetConfig()
 
@@ -86,7 +89,7 @@ func SendEmail(subject, body, to string, attachments []models.FileObject) error 
 	timeout := time.Duration(config.SMTPTimeout) * time.Second
 
 	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	// Channel for sending result

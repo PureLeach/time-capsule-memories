@@ -38,9 +38,10 @@ func CreateFeedback(c echo.Context) error {
 	}
 
 	// Store feedback in the database
-	createdFeedback, err := repository.CreateUserFeedback(&feedback)
+	ctx := c.Request().Context()
+	createdFeedback, err := repository.CreateUserFeedback(ctx, &feedback)
 	if err != nil {
-		logging.FromContext(c.Request().Context()).Error("failed to create feedback", "error", err)
+		logging.FromContext(ctx).Error("failed to create feedback", "error", err)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Failed to create feedback",
 		})

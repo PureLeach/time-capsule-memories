@@ -9,7 +9,10 @@ import (
 )
 
 // CreateUserFeedback creates a new feedback from a user and returns the created feedback data.
-func CreateUserFeedback(feedback *models.CreateFeedbackRequest) (createdFeedback *models.FeedbackResponse, err error) {
+func CreateUserFeedback(ctx context.Context, feedback *models.CreateFeedbackRequest) (createdFeedback *models.FeedbackResponse, err error) {
+	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
+	defer cancel()
+
 	query := `
 	INSERT INTO users_feedback (message)
 	VALUES ($1)
@@ -20,7 +23,7 @@ func CreateUserFeedback(feedback *models.CreateFeedbackRequest) (createdFeedback
 
 	// Execute the query to insert the feedback into the database
 	err = database.DB.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		feedback.Message,
 	).Scan(

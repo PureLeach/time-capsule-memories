@@ -76,9 +76,8 @@ func MinioInit() {
 }
 
 // GeneratePresignedUploadURL generates a presigned URL for uploading a file to MinIO.
-func GeneratePresignedUploadURL(objectName string, expiration time.Duration) (string, error) {
+func GeneratePresignedUploadURL(ctx context.Context, objectName string, expiration time.Duration) (string, error) {
 	bucketName := config.GetConfig().MinioBucketName
-	ctx := context.Background()
 
 	minioClient, err := GetMinioClient()
 	if err != nil {
@@ -94,9 +93,8 @@ func GeneratePresignedUploadURL(objectName string, expiration time.Duration) (st
 }
 
 // GetFilesInDirectory retrieves the list of files in a directory by its UUID, along with the contents.
-func GetFilesInDirectory(directoryUUID string) ([]models.FileObject, error) {
+func GetFilesInDirectory(ctx context.Context, directoryUUID string) ([]models.FileObject, error) {
 	bucketName := config.GetConfig().MinioBucketName
-	ctx := context.Background()
 
 	minioClient, err := GetMinioClient()
 	if err != nil {

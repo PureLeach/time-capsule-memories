@@ -38,10 +38,11 @@ func SendTestEmail(c echo.Context) error {
 		})
 	}
 
-	log := logging.FromContext(c.Request().Context())
+	ctx := c.Request().Context()
+	log := logging.FromContext(ctx)
 
 	// Fetch attachments from MinIO
-	attachments, err := minio_client.GetFilesInDirectory(*emailData.FilesFolderUUID)
+	attachments, err := minio_client.GetFilesInDirectory(ctx, *emailData.FilesFolderUUID)
 	if err != nil {
 		log.Error("failed to get files from directory",
 			"folder_uuid", *emailData.FilesFolderUUID,
@@ -53,7 +54,7 @@ func SendTestEmail(c echo.Context) error {
 	}
 
 	// Send the email
-	if err := services.SendEmail(emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
+	if err := services.SendEmail(ctx, emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
 		log.Error("failed to send email", "error", err)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Could not send email",

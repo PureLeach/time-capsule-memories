@@ -41,9 +41,10 @@ func GeneratePresignedURLHandler(c echo.Context) error {
 	fileName := uuid.New().String()
 
 	// Generate a presigned upload URL valid for 1 hour
-	presignedURL, err := minio_client.GeneratePresignedUploadURL(fmt.Sprintf("%s/%s", directory, fileName), time.Hour)
+	ctx := c.Request().Context()
+	presignedURL, err := minio_client.GeneratePresignedUploadURL(ctx, fmt.Sprintf("%s/%s", directory, fileName), time.Hour)
 	if err != nil {
-		logging.FromContext(c.Request().Context()).Error("failed to generate presigned URL",
+		logging.FromContext(ctx).Error("failed to generate presigned URL",
 			"directory", directory,
 			"error", err,
 		)

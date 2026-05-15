@@ -9,8 +9,15 @@ import (
 	"time_capsule_memories/internal/models"
 )
 
+// dbTimeout caps how long a single repository call may block waiting on the
+// database. Derived from the caller's ctx, so request cancellation still wins.
+const dbTimeout = 5 * time.Second
+
 // CreateCapsule creates a new capsule in the database and returns the created capsule data.
-func CreateCapsule(capsule *models.CreateCapsuleRequest) (createdCapsule *models.CapsuleResponse, err error) {
+func CreateCapsule(ctx context.Context, capsule *models.CreateCapsuleRequest) (createdCapsule *models.CapsuleResponse, err error) {
+	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
+	defer cancel()
+
 	query := `
 	INSERT INTO capsules (sender_name, send_at, message, recipient_email, files_folder_UUID)
 	VALUES ($1, $2, $3, $4, $5)
@@ -20,7 +27,7 @@ func CreateCapsule(capsule *models.CreateCapsuleRequest) (createdCapsule *models
 	createdCapsule = &models.CapsuleResponse{}
 
 	err = database.DB.QueryRow(
-		context.Background(),
+		ctx,
 		query,
 		capsule.SenderName,
 		capsule.SendAt,
@@ -47,7 +54,10 @@ func CreateCapsule(capsule *models.CreateCapsuleRequest) (createdCapsule *models
 }
 
 // GetCapsulesByToday retrieves all capsules scheduled for today with a "waiting" status.
-func GetCapsulesByToday() (capsules []*models.CapsuleResponse, err error) {
+func GetCapsulesByToday(ctx context.Context) (capsules []*models.CapsuleResponse, err error) {
+	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
+	defer cancel()
+
 	currentDate := time.Now().Format("2006-01-02")
 
 	query := `
@@ -57,7 +67,7 @@ func GetCapsulesByToday() (capsules []*models.CapsuleResponse, err error) {
 	`
 
 	rows, err := database.DB.Query(
-		context.Background(),
+		ctx,
 		query,
 		currentDate,
 	)
@@ -95,7 +105,10 @@ func GetCapsulesByToday() (capsules []*models.CapsuleResponse, err error) {
 }
 
 // UpdateCapsuleStatusByID updates the status of a capsule by its ID.
-func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
+func UpdateCapsuleStatusByID(ctx context.Context, capsuleID int, newStatus string) error {
+	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
+	defer cancel()
+
 	query := `
 	UPDATE capsules
 	SET status = $1
@@ -104,7 +117,7 @@ func UpdateCapsuleStatusByID(capsuleID int, newStatus string) error {
 
 	// Execute the status update
 	_, err := database.DB.Exec(
-		context.Background(),
+		ctx,
 		query,
 		newStatus,
 		capsuleID,

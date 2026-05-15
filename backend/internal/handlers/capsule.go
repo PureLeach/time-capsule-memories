@@ -37,7 +37,7 @@ func CreateCapsule(c echo.Context) error {
 	}
 
 	// Create capsule in database
-	createdCapsule, err := repository.CreateCapsule(&capsule)
+	createdCapsule, err := repository.CreateCapsule(c.Request().Context(), &capsule)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Could not create capsule",
