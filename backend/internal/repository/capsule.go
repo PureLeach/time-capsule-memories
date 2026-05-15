@@ -53,31 +53,34 @@ func CreateCapsule(ctx context.Context, capsule *models.CreateCapsuleRequest) (c
 	return createdCapsule, nil
 }
 
-// GetCapsulesByToday retrieves all capsules scheduled for today with a "waiting" status.
-func GetCapsulesByToday(ctx context.Context) (capsules []*models.CapsuleResponse, err error) {
+func ClaimDueCapsules(ctx context.Context, limit int) ([]*models.CapsuleResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	currentDate := time.Now().Format("2006-01-02")
-
 	query := `
-	SELECT id, sender_name, created_at, send_at, message, recipient_email, files_folder_UUID, status
-	FROM capsules
-	WHERE send_at::date = $1 AND status = 'waiting';
+	WITH due AS (
+	    SELECT id FROM capsules
+	    WHERE status = 'waiting' AND send_at < CURRENT_DATE + INTERVAL '1 day'
+	    ORDER BY send_at
+	    FOR UPDATE SKIP LOCKED
+	    LIMIT $1
+	)
+	UPDATE capsules c
+	SET status = 'in progress'
+	FROM due
+	WHERE c.id = due.id
+	RETURNING c.id, c.sender_name, c.created_at, c.send_at, c.message,
+	          c.recipient_email, c.files_folder_UUID, c.status;
 	`
 
-	rows, err := database.DB.Query(
-		ctx,
-		query,
-		currentDate,
-	)
+	rows, err := database.DB.Query(ctx, query, limit)
 	if err != nil {
-		slog.Error("failed to query capsules", "error", err)
+		slog.Error("failed to claim due capsules", "error", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	// Mapping rows to capsule objects
+	var capsules []*models.CapsuleResponse
 	for rows.Next() {
 		capsule := &models.CapsuleResponse{}
 		if err := rows.Scan(
@@ -90,40 +93,36 @@ func GetCapsulesByToday(ctx context.Context) (capsules []*models.CapsuleResponse
 			&capsule.FilesFolderUUID,
 			&capsule.Status,
 		); err != nil {
-			slog.Error("failed to scan capsule row", "error", err)
+			slog.Error("failed to scan claimed capsule row", "error", err)
 			return nil, err
 		}
 		capsules = append(capsules, capsule)
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Error("failed to iterate capsule rows", "error", err)
+		slog.Error("failed to iterate claimed capsule rows", "error", err)
 		return nil, err
 	}
 
 	return capsules, nil
 }
 
-// UpdateCapsuleStatusByID updates the status of a capsule by its ID.
-func UpdateCapsuleStatusByID(ctx context.Context, capsuleID int, newStatus string) error {
+func SetCapsuleStatus(ctx context.Context, capsuleID int, newStatus string) error {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	query := `
-	UPDATE capsules
-	SET status = $1
-	WHERE id = $2;
-	`
-
-	// Execute the status update
 	_, err := database.DB.Exec(
 		ctx,
-		query,
+		`UPDATE capsules SET status = $1 WHERE id = $2`,
 		newStatus,
 		capsuleID,
 	)
 	if err != nil {
-		slog.Error("failed to update capsule status", "capsule_id", capsuleID, "error", err)
+		slog.Error("failed to set capsule status",
+			"capsule_id", capsuleID,
+			"status", newStatus,
+			"error", err,
+		)
 		return err
 	}
 

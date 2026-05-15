@@ -11,38 +11,30 @@ import (
 	"time_capsule_memories/internal/services"
 )
 
-// capsuleDispatchTimeout is the per-capsule budget covering MinIO fetch, SMTP
-// delivery, and the status update. Generous on purpose — attachments are
-// pulled in full and base64-encoded before send.
 const capsuleDispatchTimeout = 2 * time.Minute
 
-// JobCapsule is a scheduled task that processes capsules scheduled for today's delivery date.
+const capsuleClaimLimit = 100
+
 func JobCapsule() {
-	// Record the job start time for monitoring purposes
 	startTime := time.Now()
 	slog.Info("capsule dispatch started", "started_at", startTime.Format(time.RFC3339))
 
-	// Fetch the capsules that are scheduled for delivery today
-	capsules, err := repository.GetCapsulesByToday(context.Background())
+	capsules, err := repository.ClaimDueCapsules(context.Background(), capsuleClaimLimit)
 	if err != nil {
-		slog.Error("failed to fetch due capsules", "error", err)
+		slog.Error("failed to claim due capsules", "error", err)
 		return
 	}
 
-	// If no capsules are found, log it and exit the function
 	if len(capsules) == 0 {
 		slog.Info("no capsules due")
 		return
 	}
 
-	slog.Info("capsules due", "count", len(capsules))
+	slog.Info("capsules claimed", "count", len(capsules))
 
-	// Use a WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
-
-	// Iterate over each capsule to process them concurrently
 	for _, capsule := range capsules {
-		capsule := capsule // Copy the capsule to avoid race conditions in goroutines
+		capsule := capsule
 		wg.Add(1)
 
 		go func(capsuleID string) {
@@ -59,7 +51,6 @@ func JobCapsule() {
 		}(strconv.Itoa(capsule.ID))
 	}
 
-	// Wait for all goroutines to finish before logging job completion
 	wg.Wait()
 
 	slog.Info("capsule dispatch finished", "finished_at", time.Now().Format(time.RFC3339))
