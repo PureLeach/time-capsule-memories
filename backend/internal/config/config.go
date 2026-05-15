@@ -43,6 +43,9 @@ type Config struct {
 
 	// Logging
 	LogLevel string `env:"LOG_LEVEL" env-default:"info"`
+
+	// HTTP
+	CORSAllowedOrigins []string `env:"CORS_ALLOWED_ORIGINS" env-separator:"," env-default:"http://frontend.localhost,http://localhost:8001"`
 }
 
 func LoadConfig() (*Config, error) {

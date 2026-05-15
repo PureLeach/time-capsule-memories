@@ -16,11 +16,12 @@ import (
 	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/jobs"
 	"time_capsule_memories/internal/logging"
-	"time_capsule_memories/internal/middleware"
+	appmw "time_capsule_memories/internal/middleware"
 	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/routes"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	_ "time_capsule_memories/docs" // Swagger docs
 
@@ -28,7 +29,8 @@ import (
 )
 
 func main() {
-	logging.Init(config.GetConfig().LogLevel)
+	cfg := config.GetConfig()
+	logging.Init(cfg.LogLevel)
 
 	if err := database.Connect(); err != nil {
 		logging.Fatal("database connection failed", "error", err)
@@ -40,9 +42,17 @@ func main() {
 	jobs.StartScheduler()
 
 	e := echo.New()
-	e.Logger.SetLevel(0)
+	e.HideBanner = true
+	e.HidePort = true
 
-	e.Use(middleware.CORSConfig())
+	// Order matters: request id first so every later layer can log it; recover
+	// next so panics in handlers don't bypass the access log; access log wraps
+	// the handler; body limit and CORS sit closest to the handler.
+	e.Use(appmw.RequestID())
+	e.Use(appmw.Recover())
+	e.Use(appmw.AccessLog())
+	e.Use(middleware.BodyLimit("1M"))
+	e.Use(appmw.CORSConfig(cfg.CORSAllowedOrigins))
 
 	routes.RegisterFileRoutes(e)
 	routes.RegisterCapsuleRoutes(e)
@@ -52,5 +62,7 @@ func main() {
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	slog.Info("starting HTTP server", "addr", ":8000")
-	e.Logger.Fatal(e.Start(":8000"))
+	if err := e.Start(":8000"); err != nil {
+		logging.Fatal("http server stopped", "error", err)
+	}
 }
