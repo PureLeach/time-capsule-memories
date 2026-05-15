@@ -5,11 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"mime/multipart"
 	"net/smtp"
 	"net/textproto"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -46,9 +44,6 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 
 	// Adding attachments
 	for _, attachment := range attachments {
-		// Debugging step: Save attachment as a file locally (can be commented out in production)
-		// saveAsFile(attachment)
-
 		// Creating attachment part
 		h := make(textproto.MIMEHeader)
 		h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(attachment.FileName)))
@@ -76,19 +71,6 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 	return buf.Bytes(), nil
 }
 
-// saveAsFile saves the attachment file locally for debugging purposes.
-func saveAsFile(attachment models.FileObject) {
-	// Create directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(attachment.FileName), os.ModePerm); err != nil {
-		log.Fatalf("Error creating directory %s: %v", filepath.Dir(attachment.FileName), err)
-	}
-	// Save file locally
-	err := os.WriteFile(attachment.FileName, attachment.Content, 0644)
-	if err != nil {
-		log.Fatalf("Error saving file %s: %v", attachment.FileName, err)
-	}
-}
-
 // SendEmail sends an email with the provided subject, body, and attachments.
 func SendEmail(subject, body, to string, attachments []models.FileObject) error {
 	// Get configuration values
@@ -99,9 +81,6 @@ func SendEmail(subject, body, to string, attachments []models.FileObject) error 
 	if err != nil {
 		return fmt.Errorf("failed to create message: %v", err)
 	}
-
-	// Logging attempt to send email
-	fmt.Println("Attempting to send email...")
 
 	// Set timeout duration for SMTP operation
 	timeout := time.Duration(config.SMTPTimeout) * time.Second

@@ -7,16 +7,12 @@ import (
 
 func CORSConfig() echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{
-			"*",
-		},
+		AllowOrigins: []string{"*"},
 		AllowMethods: []string{
 			"GET", "POST", "PUT", "DELETE", "OPTIONS",
 		},
 		AllowHeaders: []string{
 			"Origin", "Content-Type", "Accept", "Authorization",
 		},
-		// Allow credentials like cookies to be sent
-		AllowCredentials: true,
 	})
 }

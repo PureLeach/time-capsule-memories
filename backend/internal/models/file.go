@@ -8,7 +8,6 @@ type PresignedURLResponse struct {
 	PresignedURL string `json:"presigned_url"`
 }
 
-// Структура для хранения информации о файле
 type FileObject struct {
 	FileName    string
 	Content     []byte

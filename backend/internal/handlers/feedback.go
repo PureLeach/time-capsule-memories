@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/repository"
+	"time_capsule_memories/internal/validators"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 )
 
@@ -30,8 +30,7 @@ func CreateFeedback(c echo.Context) error {
 	}
 
 	// Validate the input
-	validate := validator.New()
-	if err := validate.Struct(feedback); err != nil {
+	if err := validators.ValidateStruct(feedback); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error: "Validation error: " + err.Error(),
 		})
