@@ -5,39 +5,66 @@
       <el-form :model="form" :rules="rules" ref="formRef" label-width="150px" class="custom-form">
         <!-- Sender's Name -->
         <el-form-item :label="$t('form.senderName')" prop="name">
-          <el-input v-model="form.name" maxlength="30" :placeholder="$t('form.namePlaceholder')" class="input-field" />
+          <el-input
+            v-model="form.name"
+            maxlength="30"
+            :placeholder="$t('form.namePlaceholder')"
+            class="input-field"
+          />
         </el-form-item>
 
         <!-- Delivery Date -->
         <el-form-item :label="$t('form.deliveryDate')" prop="date">
-          <el-date-picker v-model="form.date" type="date" format="DD/MM/YYYY" :placeholder="$t('form.deliveryDate')"
-            style="width: 96%; height: 40px; font-size: 14px;" :disabled-date="disablePastDates" class="input-field" />
+          <el-date-picker
+            v-model="form.date"
+            type="date"
+            format="DD/MM/YYYY"
+            :placeholder="$t('form.deliveryDate')"
+            style="width: 96%; height: 40px; font-size: 14px"
+            :disabled-date="disablePastDates"
+            class="input-field"
+          />
         </el-form-item>
 
         <!-- Message -->
         <el-form-item :label="$t('form.message')" prop="message">
-          <el-input v-model="form.message" type="textarea" maxlength="4096" :placeholder="$t('form.message')"
-            class="input-field custom-input" />
+          <el-input
+            v-model="form.message"
+            type="textarea"
+            maxlength="4096"
+            :placeholder="$t('form.message')"
+            class="input-field custom-input"
+          />
         </el-form-item>
 
         <!-- Recipient Email -->
         <el-form-item :label="$t('form.recipientEmail')" prop="email">
-          <el-input v-model="form.email" :placeholder="$t('form.recipientEmail')" class="input-field" />
+          <el-input
+            v-model="form.email"
+            :placeholder="$t('form.recipientEmail')"
+            class="input-field"
+          />
         </el-form-item>
 
         <!-- Attachments -->
         <el-form-item :label="$t('form.attachments')">
           <div class="attachment-container">
-            <el-upload class="file-upload" list-type="picture-card" accept="image/*" :http-request="uploadToS3"
-              :limit="3" :before-upload="beforeUpload" :file-list="form.attachments" @exceed="handleExceed">
+            <el-upload
+              class="file-upload"
+              list-type="picture-card"
+              accept="image/*"
+              :http-request="handleUpload"
+              :limit="3"
+              :before-upload="beforeUpload"
+              :file-list="form.attachments"
+              @exceed="handleExceed"
+            >
               <el-icon>
                 <Plus />
               </el-icon>
             </el-upload>
           </div>
         </el-form-item>
-
-
       </el-form>
       <!-- Submit and Reset Buttons -->
       <el-form-item class="form-buttons">
@@ -50,48 +77,40 @@
           </el-button>
         </div>
       </el-form-item>
-
     </el-card>
-
   </main-layout>
 </template>
 
-
 <script>
-import axios from "axios";
-import MainLayout from "@/layouts/MainLayout.vue";
-import { v4 as uuidv4 } from "uuid";
-import dayjs from "dayjs";
-import { fileTypeFromBuffer } from "file-type";
-import { Plus } from "@element-plus/icons-vue";
-
-const apiUrl = import.meta.env.VITE_BACKEND_API_URL;
-
-axios.defaults.baseURL = apiUrl;
+import MainLayout from '@/layouts/MainLayout.vue';
+import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
+import { fileTypeFromBuffer } from 'file-type';
+import { Plus } from '@element-plus/icons-vue';
+import { createCapsule, getPresignedUrl, uploadToS3 } from '@/api/capsules';
 
 export default {
   components: { MainLayout, Plus },
   data() {
     return {
       form: {
-        name: "",
-        date: "",
-        message: "",
-        email: "",
+        name: '',
+        date: '',
+        message: '',
+        email: '',
       },
       uniqueId: uuidv4(),
-      presignedUrl: "",
     };
   },
   computed: {
     rules() {
       return {
-        name: [{ required: true, message: this.$t("form.nameRequired"), trigger: "blur" }],
-        date: [{ required: true, message: this.$t("form.dateRequired"), trigger: "change" }],
-        message: [{ required: true, message: this.$t("form.messageRequired"), trigger: "blur" }],
+        name: [{ required: true, message: this.$t('form.nameRequired'), trigger: 'blur' }],
+        date: [{ required: true, message: this.$t('form.dateRequired'), trigger: 'change' }],
+        message: [{ required: true, message: this.$t('form.messageRequired'), trigger: 'blur' }],
         email: [
-          { required: true, message: this.$t("form.emailRequired"), trigger: "blur" },
-          { type: "email", message: this.$t("form.invalidEmail"), trigger: "blur" },
+          { required: true, message: this.$t('form.emailRequired'), trigger: 'blur' },
+          { type: 'email', message: this.$t('form.invalidEmail'), trigger: 'blur' },
         ],
       };
     },
@@ -104,88 +123,56 @@ export default {
       return date.getTime() < Date.now();
     },
     formatDate(date) {
-      return dayjs(date).format("YYYY-MM-DD");
+      return dayjs(date).format('YYYY-MM-DD');
     },
-    async generatePresignedUrl() {
-      try {
-        const response = await axios.get(`/generate-presigned-url?directory=${this.uniqueId}`);
-        this.presignedUrl = response.data.presigned_url;
-      } catch (error) {
-        console.error("Error generating presigned URL:", error);
-      }
-    },
-    async uploadToS3({ file }) {
-      await this.generatePresignedUrl();
-
-      if (!this.presignedUrl) {
-        console.error("Presigned URL is missing or invalid");
-        return Promise.reject(new Error("Presigned URL is not available"));
-      }
-
-      const s3Axios = axios.create();
-      try {
-        await s3Axios.put(this.presignedUrl, file, {
-          headers: {
-            "Content-Type": file.type,
-          },
-        });
-      } catch (error) {
-        console.error("Error uploading file to S3:", error.message || error);
-        throw error;
-      }
+    async handleUpload({ file }) {
+      const presignedUrl = await getPresignedUrl(this.uniqueId);
+      await uploadToS3(presignedUrl, file);
     },
     async beforeUpload(file) {
       const arrayBuffer = await file.arrayBuffer();
       const type = await fileTypeFromBuffer(arrayBuffer);
 
       if (file.size > 5 * 1024 * 1024) {
-        this.$message.error(this.$t("form.uploadFileSizeError"));
+        this.$message.error(this.$t('form.uploadFileSizeError'));
         return false;
       }
 
-      if (!type || !type.mime.startsWith("image/")) {
-        this.$message.error(this.$t("form.uploadFileTypeError"));
+      if (!type || !type.mime.startsWith('image/')) {
+        this.$message.error(this.$t('form.uploadFileTypeError'));
         return false;
       }
 
       return true;
     },
     handleExceed() {
-      this.$message.warning(this.$t("form.uploadLimitExceeded"));
+      this.$message.warning(this.$t('form.uploadLimitExceeded'));
     },
     submitForm() {
-      this.$refs.formRef.validate((valid) => {
-        if (valid) {
-          const data = {
+      this.$refs.formRef.validate(async (valid) => {
+        if (!valid) return;
+        try {
+          await createCapsule({
             message: this.form.message,
             recipient_email: this.form.email,
             send_at: this.formatDate(this.form.date),
             sender_name: this.form.name,
             files_folder_uuid: this.uniqueId,
-          };
-
-          axios
-            .post("/capsules", data)
-            .then(() => {
-              this.resetForm();
-            })
-            .catch((error) => {
-              console.error("Error submitting form:", error);
-            });
+          });
+          this.resetForm();
+        } catch (error) {
+          this.$message.error(error.message);
         }
       });
     },
     resetForm() {
       this.$refs.formRef.resetFields();
       this.form.attachments = [];
-      this.generatePresignedUrl();
+      this.uniqueId = uuidv4();
     },
   },
 };
 </script>
-
-
-
 
 <style scoped>
 /* The main form */
@@ -196,7 +183,12 @@ export default {
   margin-top: 50px;
   padding: 10px;
   border-radius: 16px;
-  background: radial-gradient(circle, rgba(41, 123, 134, 0.9), rgba(2, 76, 92, 0.8), rgba(2, 76, 92, 0.9));
+  background: radial-gradient(
+    circle,
+    rgba(41, 123, 134, 0.9),
+    rgba(2, 76, 92, 0.8),
+    rgba(2, 76, 92, 0.9)
+  );
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   text-align: left;
   flex-direction: column;
@@ -239,13 +231,11 @@ export default {
   border: 1px solid #ddd;
 }
 
-
 /* Attached files */
 
 .attachment-container {
   display: flex;
   justify-content: center;
-
 }
 
 ::v-deep(.el-upload-list__item-preview) {
@@ -259,8 +249,6 @@ export default {
   transform: translate(-50%, 0);
   /* Shift for precise centering */
 }
-
-
 
 /* Buttons */
 
@@ -281,7 +269,6 @@ export default {
   font-size: 14px;
   text-align: center;
 }
-
 
 .submit-button {
   background: linear-gradient(45deg, rgba(102, 217, 255, 1) 0%, rgba(45, 99, 255, 1) 100%);

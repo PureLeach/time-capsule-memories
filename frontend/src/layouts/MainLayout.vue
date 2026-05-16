@@ -33,7 +33,12 @@ export default {
   display: flex;
   justify-content: space-between;
   padding: 0.5rem;
-  background: linear-gradient(135deg, rgba(19, 121, 104, 0.8), rgba(128, 83, 89, 0.664), rgba(25, 25, 112, 0.8));
+  background: linear-gradient(
+    135deg,
+    rgba(19, 121, 104, 0.8),
+    rgba(128, 83, 89, 0.664),
+    rgba(25, 25, 112, 0.8)
+  );
   color: white;
   border-bottom: 1px solid rgba(221, 221, 221, 0.5);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -51,7 +56,13 @@ export default {
 .main-footer {
   text-align: center;
   padding: 0.7rem;
-  background: linear-gradient(135deg, rgba(12, 14, 29, 0.8), rgba(31, 38, 51, 0.8), rgba(41, 44, 67, 0.8), rgba(74, 42, 122, 0.8));
+  background: linear-gradient(
+    135deg,
+    rgba(12, 14, 29, 0.8),
+    rgba(31, 38, 51, 0.8),
+    rgba(41, 44, 67, 0.8),
+    rgba(74, 42, 122, 0.8)
+  );
   color: white;
   border-top: 1px solid rgba(221, 221, 221, 0.5);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);

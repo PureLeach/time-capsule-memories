@@ -38,7 +38,9 @@ export default {
 
 h1 {
   font-size: 3rem;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.6);
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 20px rgba(255, 255, 255, 0.6);
   margin-bottom: 20px;
 }
 
@@ -58,8 +60,13 @@ p {
   font-size: 1.5rem;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 0 25px rgba(255, 255, 255, 0.6), 0 0 40px rgba(0, 0, 255, 0.6);
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  box-shadow:
+    0 0 25px rgba(255, 255, 255, 0.6),
+    0 0 40px rgba(0, 0, 255, 0.6);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease;
   position: relative;
   overflow: hidden;
   z-index: 1;
@@ -73,7 +80,9 @@ p {
   width: 300%;
   height: 300%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 20%, rgba(0, 0, 255, 0.8) 80%);
-  transition: width 0.4s, height 0.4s;
+  transition:
+    width 0.4s,
+    height 0.4s;
   border-radius: 50%;
   transform: translate(-50%, -50%);
   z-index: -1;
@@ -81,7 +90,9 @@ p {
 
 .welcome-button:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 35px rgba(255, 255, 255, 0.8), 0 0 50px rgba(0, 0, 255, 0.8);
+  box-shadow:
+    0 0 35px rgba(255, 255, 255, 0.8),
+    0 0 50px rgba(0, 0, 255, 0.8);
 }
 
 .welcome-button:hover::before {
@@ -91,6 +102,8 @@ p {
 
 .welcome-button:active {
   transform: scale(1);
-  box-shadow: 0 0 25px rgba(255, 255, 255, 0.6), 0 0 35px rgba(0, 0, 255, 0.6);
+  box-shadow:
+    0 0 25px rgba(255, 255, 255, 0.6),
+    0 0 35px rgba(0, 0, 255, 0.6);
 }
 </style>

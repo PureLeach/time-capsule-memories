@@ -20,8 +20,13 @@
 
         <form class="about-form" @submit.prevent="handleSubmit">
           <label for="message" class="form-label">{{ $t('about.form.label') }}</label>
-          <textarea id="message" class="form-textarea" rows="5" v-model="message"
-            :placeholder="$t('about.form.placeholder')"></textarea>
+          <textarea
+            id="message"
+            class="form-textarea"
+            rows="5"
+            v-model="message"
+            :placeholder="$t('about.form.placeholder')"
+          ></textarea>
           <button type="submit" class="form-button">{{ $t('about.form.submit') }}</button>
         </form>
       </div>
@@ -32,50 +37,52 @@
       <div class="modal-content">
         <h2 class="modal-title">{{ $t('about.modal.title') }}</h2>
         <p class="modal-message">{{ $t('about.modal.message') }}</p>
-        <button @click="redirectHome(true)" class="modal-button">{{ $t('about.modal.button') }}</button>
+        <button @click="redirectHome(true)" class="modal-button">
+          {{ $t('about.modal.button') }}
+        </button>
       </div>
     </div>
-
 
     <!-- A pop-up window for an error -->
     <div v-if="showErrorModal" class="modal">
       <div class="modal-content">
         <h2 class="modal-title">{{ $t('about.modal.errorTitle') }}</h2>
         <p class="modal-message">{{ $t('about.modal.errorMessage') }}</p>
-        <button @click="redirectHome(false)" class="modal-button">{{ $t('about.modal.errorButton') }}</button>
+        <button @click="redirectHome(false)" class="modal-button">
+          {{ $t('about.modal.errorButton') }}
+        </button>
       </div>
     </div>
-
   </main-layout>
 </template>
 
-
 <script>
 import MainLayout from '@/layouts/MainLayout.vue';
+import { submitFeedback } from '@/api/feedback';
 
 export default {
   name: 'AboutPage',
   components: {
-    MainLayout
+    MainLayout,
   },
   data() {
     return {
-      isOpen: false, // Spoiler Status
-      message: '', // Storing the message text
-      showModal: false, // The status of the successful sending modal window
-      showErrorModal: false, // The status of the error modal window
+      isOpen: false,
+      message: '',
+      showModal: false,
+      showErrorModal: false,
     };
   },
   methods: {
     toggleSpoiler() {
-      this.isOpen = !this.isOpen; // Switching spoiler status
+      this.isOpen = !this.isOpen;
     },
     beforeEnter(el) {
       el.style.opacity = 0;
       el.style.transform = 'translateY(-10px)';
     },
     enter(el, done) {
-      el.offsetHeight; // Forcing a redraw
+      el.offsetHeight;
       el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
       el.style.opacity = 1;
       el.style.transform = 'translateY(0)';
@@ -89,47 +96,25 @@ export default {
     },
     async handleSubmit() {
       if (!this.message.trim()) {
-        this.showErrorModal = true; // Showing the modal window with an error
+        this.showErrorModal = true;
         return;
       }
-
-      const url = `${import.meta.env.VITE_BACKEND_API_URL}/feedback`;
-      const payload = { message: this.message };
-
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Feedback submitted successfully', result);
-          this.showModal = true; // Showing the modal window with success
-        } else {
-          console.error('Failed to submit feedback', response);
-          alert('Failed to submit feedback, please try again later.');
-        }
+        await submitFeedback({ message: this.message });
+        this.showModal = true;
       } catch (error) {
-        console.error('Error submitting feedback', error);
-        alert('An error occurred, please try again later.');
+        this.$message.error(error.message);
       }
     },
     redirectHome(isSuccess) {
       if (isSuccess) {
-        this.$router.push('/'); // Redirect to the main page if successful
+        this.$router.push('/');
       }
-      this.showModal = false;  // Closing the modal window after the redirect
-      this.showErrorModal = false;  // Closing the error modal window
-    }
-
-  }
+      this.showModal = false;
+      this.showErrorModal = false;
+    },
+  },
 };
-
-
 </script>
 
 <style scoped>
@@ -144,7 +129,12 @@ export default {
 .about-form-container {
   max-width: 640px;
   width: 100%;
-  background: radial-gradient(circle, rgba(41, 123, 134, 0.9), rgba(2, 76, 92, 0.8), rgba(2, 76, 92, 0.9));
+  background: radial-gradient(
+    circle,
+    rgba(41, 123, 134, 0.9),
+    rgba(2, 76, 92, 0.8),
+    rgba(2, 76, 92, 0.9)
+  );
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
@@ -230,7 +220,9 @@ export default {
 
 .spoiler-content-enter-active,
 .spoiler-content-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
 }
 
 .spoiler-content-enter,
@@ -271,7 +263,10 @@ export default {
   cursor: pointer;
   font-weight: bold;
   text-transform: uppercase;
-  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    transform 0.2s ease,
+    box-shadow 0.3s ease;
   box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
   background-size: 200% 200%;
   background-position: 100% 0;
@@ -290,8 +285,6 @@ export default {
   box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
   background-position: 100% 0;
 }
-
-
 
 /* The style for the modal window */
 .modal {
@@ -337,7 +330,9 @@ export default {
   cursor: pointer;
   font-weight: bold;
   text-transform: uppercase;
-  transition: background 0.3s ease, transform 0.2s ease;
+  transition:
+    background 0.3s ease,
+    transform 0.2s ease;
 }
 
 .modal-button:hover {

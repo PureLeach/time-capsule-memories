@@ -42,19 +42,34 @@ export default {
 </script>
 
 <style scoped>
-.language-switcher { position: fixed; top: 10px; right: 10px; cursor: pointer; }
-.flag-container {
-  width: 30px; height: 30px;
-  display: flex; justify-content: center; align-items: center;
-  border-radius: 50%; background: rgba(255,255,255,0.2);
-  transition: background 0.3s ease; perspective: 600px;
+.language-switcher {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
 }
-.flag-container:hover { background: rgba(255,255,255,0.4); }
+.flag-container {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.3s ease;
+  perspective: 600px;
+}
+.flag-container:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
 .flag {
-  width: 20px; height: 20px;
+  width: 20px;
+  height: 20px;
   transition: transform 0.3s ease;
   backface-visibility: hidden;
   transform-style: preserve-3d;
 }
-.flipping .flag { transform: rotateY(180deg); }
+.flipping .flag {
+  transform: rotateY(180deg);
+}
 </style>

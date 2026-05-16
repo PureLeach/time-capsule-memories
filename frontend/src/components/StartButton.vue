@@ -18,7 +18,7 @@ export default {
     },
     delay: {
       type: Number,
-      default: 1500,  // Default delay time
+      default: 1500, // Default delay time
     },
   },
   components: { FallingStars },

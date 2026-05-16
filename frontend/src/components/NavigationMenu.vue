@@ -22,7 +22,12 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, rgba(0, 0, 51, 0.9), rgba(20, 24, 82, 0.8), rgba(47, 79, 79, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 51, 0.9),
+    rgba(20, 24, 82, 0.8),
+    rgba(47, 79, 79, 0.9)
+  );
   border-radius: 16px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   position: fixed;
@@ -42,7 +47,9 @@ export default {
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 1px;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
   padding: 5px 10px;
   border-radius: 8px;
   position: relative;
@@ -60,7 +67,9 @@ export default {
   width: 0;
   height: 2px;
   background: #87ceeb;
-  transition: width 0.4s ease, opacity 0.4s ease;
+  transition:
+    width 0.4s ease,
+    opacity 0.4s ease;
   opacity: 0;
 }
 

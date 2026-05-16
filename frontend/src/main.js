@@ -10,11 +10,6 @@ import './styles/main.scss';
 const app = createApp(App);
 const pinia = createPinia();
 
-app
-  .use(pinia)
-  .use(router)
-  .use(i18n)
-  .use(ElementPlus)
-  .mount('#app');
+app.use(pinia).use(router).use(i18n).use(ElementPlus).mount('#app');
 
 initializeLanguage();

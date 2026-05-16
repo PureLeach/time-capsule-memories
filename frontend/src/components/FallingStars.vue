@@ -69,7 +69,9 @@ export default {
 .star {
   position: absolute;
   border-radius: 50%;
-  animation: fall 2s linear infinite, twinkle 3s ease-in-out infinite;
+  animation:
+    fall 2s linear infinite,
+    twinkle 3s ease-in-out infinite;
   animation-fill-mode: forwards;
   transform-origin: center;
   box-shadow: 0 0 10px rgba(255, 255, 255, 1);
@@ -96,7 +98,6 @@ export default {
 }
 
 @keyframes twinkle {
-
   0%,
   100% {
     opacity: 0.8;
