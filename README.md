@@ -1,5 +1,13 @@
 # Time Capsule Memories
 
+![Go 1.23+](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go&logoColor=white)
+![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js&logoColor=white)
+![Vite 6](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgx-4169E1?logo=postgresql&logoColor=white)
+![MinIO](https://img.shields.io/badge/MinIO-S3%20compat-C72E49?logo=minio&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-multistage%20%C2%B7%20non--root-2496ED?logo=docker&logoColor=white)
+![Traefik](https://img.shields.io/badge/Traefik-routing-24A1C1?logo=traefikproxy&logoColor=white)
+
 A small self-hosted service for scheduling a message — with optional image attachments — to be delivered to a recipient by email at a future date. A Vue 3 frontend captures the form and pushes attachments straight to MinIO over presigned URLs; a Go backend records the capsule in Postgres; a cron-driven dispatcher picks up due rows and sends them over SMTP.
 
 ![architecture](./architecture.png)
