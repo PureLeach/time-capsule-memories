@@ -2,10 +2,9 @@ package handlers
 
 import (
 	"net/http"
+
 	"time_capsule_memories/internal/logging"
-	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
-	"time_capsule_memories/internal/services"
 	"time_capsule_memories/internal/validators"
 
 	"github.com/labstack/echo/v4"
@@ -21,17 +20,15 @@ import (
 // @Failure 400 {object} models.ErrorResponse "Invalid input data"
 // @Failure 500 {object} models.ErrorResponse "Failed to send email"
 // @Router /send-test-email [post]
-func SendTestEmail(c echo.Context) error {
+func (h *Handler) SendTestEmail(c echo.Context) error {
 	var emailData models.EmailDataRequest
 
-	// Bind request body to struct
 	if err := c.Bind(&emailData); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error: "Invalid request payload: " + err.Error(),
 		})
 	}
 
-	// Validate input data
 	if err := validators.ValidateStruct(emailData); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Error: err.Error(),
@@ -41,8 +38,7 @@ func SendTestEmail(c echo.Context) error {
 	ctx := c.Request().Context()
 	log := logging.FromContext(ctx)
 
-	// Fetch attachments from MinIO
-	attachments, err := minio_client.GetFilesInDirectory(ctx, *emailData.FilesFolderUUID)
+	attachments, err := h.store.GetFilesInDirectory(ctx, *emailData.FilesFolderUUID)
 	if err != nil {
 		log.Error("failed to get files from directory",
 			"folder_uuid", *emailData.FilesFolderUUID,
@@ -53,8 +49,7 @@ func SendTestEmail(c echo.Context) error {
 		})
 	}
 
-	// Send the email
-	if err := services.SendEmail(ctx, emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
+	if err := h.mailer.Send(ctx, emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
 		log.Error("failed to send email", "error", err)
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Error: "Could not send email",

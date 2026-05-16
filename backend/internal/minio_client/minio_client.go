@@ -7,8 +7,8 @@ import (
 	"io"
 	"log/slog"
 	"strings"
-	"sync"
 	"time"
+
 	"time_capsule_memories/internal/config"
 	"time_capsule_memories/internal/models"
 
@@ -16,120 +16,85 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var (
-	minioClientInstance *minio.Client
-	once                sync.Once
-	initErr             error
-)
-
-// GetMinioClient returns a Singleton instance of the MinIO client. If the
-// underlying constructor fails, the same error is returned on every call so
-// callers can decide how to react rather than killing the process.
-func GetMinioClient() (*minio.Client, error) {
-	once.Do(func() {
-		cfg := config.GetConfig()
-		minioClientInstance, initErr = minio.New(cfg.MinioEndpoint, &minio.Options{
-			Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
-			Secure: cfg.MinioUseSSL,
-		})
-		if initErr != nil {
-			return
-		}
-		slog.Info("minio client initialized", "endpoint", cfg.MinioEndpoint)
-	})
-
-	return minioClientInstance, initErr
+type Store struct {
+	client *minio.Client
+	bucket string
 }
 
-// MinioInit verifies connectivity and ensures the configured bucket exists.
-// Errors bubble up so main can decide between retry, log-and-exit, or
-// degraded-mode operation.
-func MinioInit(ctx context.Context) error {
-	bucketName := config.GetConfig().MinioBucketName
-	minioClient, err := GetMinioClient()
+func New(ctx context.Context, cfg *config.Config) (*Store, error) {
+	client, err := minio.New(cfg.MinioEndpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
+		Secure: cfg.MinioUseSSL,
+	})
 	if err != nil {
-		return fmt.Errorf("minio client init: %w", err)
+		return nil, fmt.Errorf("minio client init: %w", err)
 	}
+	slog.Info("minio client initialized", "endpoint", cfg.MinioEndpoint)
 
-	if _, err := minioClient.ListBuckets(ctx); err != nil {
-		return fmt.Errorf("minio list buckets: %w", err)
+	s := &Store{client: client, bucket: cfg.MinioBucketName}
+
+	if _, err := client.ListBuckets(ctx); err != nil {
+		return nil, fmt.Errorf("minio list buckets: %w", err)
 	}
 	slog.Info("minio connection established")
 
-	exists, err := minioClient.BucketExists(ctx, bucketName)
+	exists, err := client.BucketExists(ctx, s.bucket)
 	if err != nil {
-		return fmt.Errorf("minio bucket lookup %q: %w", bucketName, err)
+		return nil, fmt.Errorf("minio bucket lookup %q: %w", s.bucket, err)
 	}
-
 	if !exists {
-		slog.Info("minio bucket missing; creating", "bucket", bucketName)
-		if err := minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{}); err != nil {
-			return fmt.Errorf("minio bucket create %q: %w", bucketName, err)
+		slog.Info("minio bucket missing; creating", "bucket", s.bucket)
+		if err := client.MakeBucket(ctx, s.bucket, minio.MakeBucketOptions{}); err != nil {
+			return nil, fmt.Errorf("minio bucket create %q: %w", s.bucket, err)
 		}
-		slog.Info("minio bucket created", "bucket", bucketName)
+		slog.Info("minio bucket created", "bucket", s.bucket)
 	} else {
-		slog.Info("minio bucket present", "bucket", bucketName)
+		slog.Info("minio bucket present", "bucket", s.bucket)
 	}
-	return nil
+
+	return s, nil
 }
 
-// GeneratePresignedUploadURL generates a presigned URL for uploading a file to MinIO.
-func GeneratePresignedUploadURL(ctx context.Context, objectName string, expiration time.Duration) (string, error) {
-	bucketName := config.GetConfig().MinioBucketName
-
-	minioClient, err := GetMinioClient()
-	if err != nil {
-		return "", fmt.Errorf("error getting MinIO client: %w", err)
-	}
-
-	presignedURL, err := minioClient.PresignedPutObject(ctx, bucketName, objectName, expiration)
-	if err != nil {
-		return "", fmt.Errorf("error generating presigned URL for object %s: %w", objectName, err)
-	}
-
-	return presignedURL.String(), nil
+func (s *Store) Ping(ctx context.Context) error {
+	_, err := s.client.ListBuckets(ctx)
+	return err
 }
 
-// GetFilesInDirectory retrieves the list of files in a directory by its UUID, along with the contents.
-func GetFilesInDirectory(ctx context.Context, directoryUUID string) ([]models.FileObject, error) {
-	bucketName := config.GetConfig().MinioBucketName
-
-	minioClient, err := GetMinioClient()
+func (s *Store) GeneratePresignedUploadURL(ctx context.Context, objectName string, expiration time.Duration) (string, error) {
+	u, err := s.client.PresignedPutObject(ctx, s.bucket, objectName, expiration)
 	if err != nil {
-		return nil, fmt.Errorf("error getting MinIO client: %w", err)
+		return "", fmt.Errorf("presign put %s: %w", objectName, err)
 	}
+	return u.String(), nil
+}
 
-	// Create a channel to list objects
-	objectCh := minioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
-		Prefix:    directoryUUID + "/", // Specify the directory prefix
-		Recursive: false,               // Do not recurse into subdirectories
+func (s *Store) GetFilesInDirectory(ctx context.Context, directoryUUID string) ([]models.FileObject, error) {
+	objectCh := s.client.ListObjects(ctx, s.bucket, minio.ListObjectsOptions{
+		Prefix:    directoryUUID + "/",
+		Recursive: false,
 	})
 
 	var files []models.FileObject
 	for object := range objectCh {
 		if object.Err != nil {
-			return nil, fmt.Errorf("error retrieving object from MinIO: %w", object.Err)
+			return nil, fmt.Errorf("list object: %w", object.Err)
 		}
 
-		// Get the object
-		obj, err := minioClient.GetObject(ctx, bucketName, object.Key, minio.GetObjectOptions{})
+		obj, err := s.client.GetObject(ctx, s.bucket, object.Key, minio.GetObjectOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("error getting object %s content: %w", object.Key, err)
+			return nil, fmt.Errorf("get object %s: %w", object.Key, err)
 		}
 
-		// Read the content of the object
 		var buffer bytes.Buffer
 		if _, err := io.Copy(&buffer, obj); err != nil {
-			return nil, fmt.Errorf("error reading content of object %s: %w", object.Key, err)
+			return nil, fmt.Errorf("read object %s: %w", object.Key, err)
 		}
 
-		// Get object info
 		stat, err := obj.Stat()
 		if err != nil {
-			return nil, fmt.Errorf("error retrieving information about object %s: %w", object.Key, err)
+			return nil, fmt.Errorf("stat object %s: %w", object.Key, err)
 		}
 
-		// Extract the file name and add the extension from Content-Type
 		f := strings.Split(object.Key, "/")
 		name := f[len(f)-1]
 		contentType := stat.ContentType

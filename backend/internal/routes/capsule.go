@@ -6,6 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RegisterCapsuleRoutes(e *echo.Echo) {
-	e.POST("/capsules", handlers.CreateCapsule)
+func RegisterCapsuleRoutes(e *echo.Echo, h *handlers.Handler) {
+	e.POST("/capsules", h.CreateCapsule)
 }

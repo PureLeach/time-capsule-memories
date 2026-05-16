@@ -6,6 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func RegisterFeedbackRoutes(e *echo.Echo) {
-	e.POST("/feedback", handlers.CreateFeedback)
+func RegisterFeedbackRoutes(e *echo.Echo, h *handlers.Handler) {
+	e.POST("/feedback", h.CreateFeedback)
 }

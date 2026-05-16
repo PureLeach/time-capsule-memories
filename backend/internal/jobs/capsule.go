@@ -15,11 +15,20 @@ const capsuleDispatchTimeout = 2 * time.Minute
 
 const capsuleClaimLimit = 100
 
-func JobCapsule() {
+type Dispatcher struct {
+	repo    *repository.Capsule
+	service *services.CapsuleService
+}
+
+func NewDispatcher(repo *repository.Capsule, service *services.CapsuleService) *Dispatcher {
+	return &Dispatcher{repo: repo, service: service}
+}
+
+func (d *Dispatcher) Run() {
 	startTime := time.Now()
 	slog.Info("capsule dispatch started", "started_at", startTime.Format(time.RFC3339))
 
-	capsules, err := repository.ClaimDueCapsules(context.Background(), capsuleClaimLimit)
+	capsules, err := d.repo.ClaimDue(context.Background(), capsuleClaimLimit)
 	if err != nil {
 		slog.Error("failed to claim due capsules", "error", err)
 		return
@@ -43,7 +52,7 @@ func JobCapsule() {
 			ctx, cancel := context.WithTimeout(context.Background(), capsuleDispatchTimeout)
 			defer cancel()
 
-			if err := services.ProcessCapsule(ctx, capsule); err != nil {
+			if err := d.service.Process(ctx, capsule); err != nil {
 				slog.Error("failed to process capsule", "capsule_id", capsuleID, "error", err)
 			} else {
 				slog.Info("capsule processed", "capsule_id", capsuleID)

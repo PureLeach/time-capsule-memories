@@ -11,16 +11,72 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
 	"time_capsule_memories/internal/config"
 	"time_capsule_memories/internal/models"
 )
 
-// createMessage creates a MIME message with attachments and returns it as a byte slice.
-func createMessage(from, subject, body, to string, attachments []models.FileObject) ([]byte, error) {
+type Mailer struct {
+	host     string
+	port     string
+	from     string
+	password string
+	timeout  time.Duration
+}
+
+func NewMailer(cfg *config.Config) *Mailer {
+	return &Mailer{
+		host:     cfg.SMTPHost,
+		port:     cfg.SMTPPort,
+		from:     cfg.SMTPFrom,
+		password: cfg.SMTPPassword,
+		timeout:  time.Duration(cfg.SMTPTimeout) * time.Second,
+	}
+}
+
+func (m *Mailer) Send(ctx context.Context, subject, body, to string, attachments []models.FileObject) error {
+	message, err := buildMessage(m.from, subject, body, to, attachments)
+	if err != nil {
+		return fmt.Errorf("failed to create message: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, m.timeout)
+	defer cancel()
+
+	errCh := make(chan error, 1)
+
+	go func() {
+		addr := fmt.Sprintf("%s:%s", m.host, m.port)
+
+		if strings.EqualFold(m.host, "mailhog") {
+			errCh <- smtp.SendMail(addr, nil, m.from, []string{to}, message)
+			return
+		}
+
+		var auth smtp.Auth
+		if m.from != "" && m.password != "" {
+			auth = smtp.PlainAuth("", m.from, m.password, m.host)
+		}
+
+		errCh <- smtp.SendMail(addr, auth, m.from, []string{to}, message)
+	}()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return fmt.Errorf("failed to send email: %v", err)
+		}
+	case <-ctx.Done():
+		return fmt.Errorf("failed to send email: timeout reached")
+	}
+
+	return nil
+}
+
+func buildMessage(from, subject, body, to string, attachments []models.FileObject) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
-	// Email headers
 	headers := map[string]string{
 		"From":         from,
 		"To":           to,
@@ -33,7 +89,6 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 	}
 	buf.WriteString("\r\n")
 
-	// Adding email body
 	part, err := writer.CreatePart(map[string][]string{
 		"Content-Type": {"text/plain; charset=UTF-8"},
 	})
@@ -42,9 +97,7 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 	}
 	part.Write([]byte(body))
 
-	// Adding attachments
 	for _, attachment := range attachments {
-		// Creating attachment part
 		h := make(textproto.MIMEHeader)
 		h.Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(attachment.FileName)))
 		h.Set("Content-Type", attachment.ContentType)
@@ -54,76 +107,15 @@ func createMessage(from, subject, body, to string, attachments []models.FileObje
 			return nil, fmt.Errorf("failed to create attachment: %v", err)
 		}
 
-		// Base64 encoding for attachment content
 		encodedContent := base64.StdEncoding.EncodeToString(attachment.Content)
-		_, err = part.Write([]byte(encodedContent))
-		if err != nil {
+		if _, err := part.Write([]byte(encodedContent)); err != nil {
 			return nil, fmt.Errorf("failed to write attachment content: %v", err)
 		}
 	}
 
-	// Finalizing MIME writer
-	err = writer.Close()
-	if err != nil {
+	if err := writer.Close(); err != nil {
 		return nil, fmt.Errorf("failed to close writer: %v", err)
 	}
 
 	return buf.Bytes(), nil
-}
-
-// SendEmail sends an email with the provided subject, body, and attachments.
-// ctx bounds the entire send; SendEmail layers its own SMTPTimeout on top so
-// a hung SMTP server can't outlive the configured budget even if the caller
-// passed a longer-lived context.
-func SendEmail(ctx context.Context, subject, body, to string, attachments []models.FileObject) error {
-	// Get configuration values
-	config := config.GetConfig()
-
-	// Create the message (MIME format)
-	message, err := createMessage(config.SMTPFrom, subject, body, to, attachments)
-	if err != nil {
-		return fmt.Errorf("failed to create message: %v", err)
-	}
-
-	// Set timeout duration for SMTP operation
-	timeout := time.Duration(config.SMTPTimeout) * time.Second
-
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	// Channel for sending result
-	errCh := make(chan error, 1)
-
-	go func() {
-		addr := fmt.Sprintf("%s:%s", config.SMTPHost, config.SMTPPort)
-
-		// Determine if this is MailHog (no TLS/STARTTLS)
-		if strings.EqualFold(config.SMTPHost, "mailhog") {
-			// Send without TLS and without auth (MailHog accepts open relay on 1025)
-			errCh <- smtp.SendMail(addr, nil, config.SMTPFrom, []string{to}, message)
-			return
-		}
-
-		// For other SMTP hosts, set up auth if credentials provided
-		var auth smtp.Auth
-		if config.SMTPFrom != "" && config.SMTPPassword != "" {
-			auth = smtp.PlainAuth("", config.SMTPFrom, config.SMTPPassword, config.SMTPHost)
-		}
-
-		// Send email (will negotiate TLS/STARTTLS if supported)
-		errCh <- smtp.SendMail(addr, auth, config.SMTPFrom, []string{to}, message)
-	}()
-
-	// Wait for send result or timeout
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return fmt.Errorf("failed to send email: %v", err)
-		}
-	case <-ctx.Done():
-		return fmt.Errorf("failed to send email: timeout reached")
-	}
-
-	return nil
 }

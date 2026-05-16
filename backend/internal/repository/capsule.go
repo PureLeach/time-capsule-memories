@@ -5,16 +5,22 @@ import (
 	"log/slog"
 	"time"
 
-	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/models"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// dbTimeout caps how long a single repository call may block waiting on the
-// database. Derived from the caller's ctx, so request cancellation still wins.
 const dbTimeout = 5 * time.Second
 
-// CreateCapsule creates a new capsule in the database and returns the created capsule data.
-func CreateCapsule(ctx context.Context, capsule *models.CreateCapsuleRequest) (createdCapsule *models.CapsuleResponse, err error) {
+type Capsule struct {
+	pool *pgxpool.Pool
+}
+
+func NewCapsule(pool *pgxpool.Pool) *Capsule {
+	return &Capsule{pool: pool}
+}
+
+func (r *Capsule) Create(ctx context.Context, capsule *models.CreateCapsuleRequest) (*models.CapsuleResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
@@ -24,9 +30,9 @@ func CreateCapsule(ctx context.Context, capsule *models.CreateCapsuleRequest) (c
 	RETURNING id, sender_name, created_at, send_at, message, recipient_email, files_folder_UUID, status;
     `
 
-	createdCapsule = &models.CapsuleResponse{}
+	created := &models.CapsuleResponse{}
 
-	err = database.DB.QueryRow(
+	err := r.pool.QueryRow(
 		ctx,
 		query,
 		capsule.SenderName,
@@ -35,25 +41,24 @@ func CreateCapsule(ctx context.Context, capsule *models.CreateCapsuleRequest) (c
 		capsule.RecipientEmail,
 		capsule.FilesFolderUUID,
 	).Scan(
-		&createdCapsule.ID,
-		&createdCapsule.SenderName,
-		&createdCapsule.CreatedAt,
-		&createdCapsule.SendAt,
-		&createdCapsule.Message,
-		&createdCapsule.RecipientEmail,
-		&createdCapsule.FilesFolderUUID,
-		&createdCapsule.Status,
+		&created.ID,
+		&created.SenderName,
+		&created.CreatedAt,
+		&created.SendAt,
+		&created.Message,
+		&created.RecipientEmail,
+		&created.FilesFolderUUID,
+		&created.Status,
 	)
-
 	if err != nil {
 		slog.Error("failed to create capsule", "error", err)
 		return nil, err
 	}
 
-	return createdCapsule, nil
+	return created, nil
 }
 
-func ClaimDueCapsules(ctx context.Context, limit int) ([]*models.CapsuleResponse, error) {
+func (r *Capsule) ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
@@ -73,7 +78,7 @@ func ClaimDueCapsules(ctx context.Context, limit int) ([]*models.CapsuleResponse
 	          c.recipient_email, c.files_folder_UUID, c.status;
 	`
 
-	rows, err := database.DB.Query(ctx, query, limit)
+	rows, err := r.pool.Query(ctx, query, limit)
 	if err != nil {
 		slog.Error("failed to claim due capsules", "error", err)
 		return nil, err
@@ -107,11 +112,11 @@ func ClaimDueCapsules(ctx context.Context, limit int) ([]*models.CapsuleResponse
 	return capsules, nil
 }
 
-func SetCapsuleStatus(ctx context.Context, capsuleID int, newStatus string) error {
+func (r *Capsule) SetStatus(ctx context.Context, capsuleID int, newStatus string) error {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	_, err := database.DB.Exec(
+	_, err := r.pool.Exec(
 		ctx,
 		`UPDATE capsules SET status = $1 WHERE id = $2`,
 		newStatus,

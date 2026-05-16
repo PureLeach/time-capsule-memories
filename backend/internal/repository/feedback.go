@@ -4,12 +4,20 @@ import (
 	"context"
 	"log/slog"
 
-	"time_capsule_memories/internal/database"
 	"time_capsule_memories/internal/models"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// CreateUserFeedback creates a new feedback from a user and returns the created feedback data.
-func CreateUserFeedback(ctx context.Context, feedback *models.CreateFeedbackRequest) (createdFeedback *models.FeedbackResponse, err error) {
+type Feedback struct {
+	pool *pgxpool.Pool
+}
+
+func NewFeedback(pool *pgxpool.Pool) *Feedback {
+	return &Feedback{pool: pool}
+}
+
+func (r *Feedback) Create(ctx context.Context, feedback *models.CreateFeedbackRequest) (*models.FeedbackResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
@@ -19,23 +27,21 @@ func CreateUserFeedback(ctx context.Context, feedback *models.CreateFeedbackRequ
 	RETURNING id, created_at, message;
     `
 
-	createdFeedback = &models.FeedbackResponse{}
+	created := &models.FeedbackResponse{}
 
-	// Execute the query to insert the feedback into the database
-	err = database.DB.QueryRow(
+	err := r.pool.QueryRow(
 		ctx,
 		query,
 		feedback.Message,
 	).Scan(
-		&createdFeedback.ID,
-		&createdFeedback.CreatedAt,
-		&createdFeedback.Message,
+		&created.ID,
+		&created.CreatedAt,
+		&created.Message,
 	)
-
 	if err != nil {
 		slog.Error("failed to create feedback", "error", err)
 		return nil, err
 	}
 
-	return createdFeedback, nil
+	return created, nil
 }
