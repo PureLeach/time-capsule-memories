@@ -16,9 +16,12 @@ var validate *validator.Validate
 func init() {
 	validate = validator.New()
 
-	// Register custom validation rules
-	validate.RegisterValidation("send_at_date_format", sendAtDateFormat)
-	validate.RegisterValidation("future_date", futureDate)
+	if err := validate.RegisterValidation("send_at_date_format", sendAtDateFormat); err != nil {
+		panic(err)
+	}
+	if err := validate.RegisterValidation("future_date", futureDate); err != nil {
+		panic(err)
+	}
 }
 
 // Custom validator: checks if the date format is correct (YYYY-MM-DD).

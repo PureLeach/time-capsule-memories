@@ -85,7 +85,7 @@ func buildMessage(from, subject, body, to string, attachments []models.FileObjec
 		"Content-Type": fmt.Sprintf("multipart/mixed; boundary=%s", writer.Boundary()),
 	}
 	for key, value := range headers {
-		buf.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
+		fmt.Fprintf(&buf, "%s: %s\r\n", key, value)
 	}
 	buf.WriteString("\r\n")
 
@@ -95,7 +95,9 @@ func buildMessage(from, subject, body, to string, attachments []models.FileObjec
 	if err != nil {
 		return nil, fmt.Errorf("failed to create body part: %v", err)
 	}
-	part.Write([]byte(body))
+	if _, err := part.Write([]byte(body)); err != nil {
+		return nil, fmt.Errorf("failed to write body: %v", err)
+	}
 
 	for _, attachment := range attachments {
 		h := make(textproto.MIMEHeader)

@@ -16,7 +16,7 @@ const (
 )
 
 // Init installs a JSON-formatted slog logger as the default. The level argument
-// accepts "debug", "info", "warn" or "error" (case-insensitive); unrecognised
+// accepts "debug", "info", "warn" or "error" (case-insensitive); unrecognized
 // values fall back to info.
 func Init(level string) {
 	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{

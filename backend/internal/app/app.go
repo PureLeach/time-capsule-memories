@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	httpAddr        = ":8000"
+	httpAddr         = ":8000"
 	minioInitTimeout = 10 * time.Second
 	shutdownTimeout  = 30 * time.Second
 )
