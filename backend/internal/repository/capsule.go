@@ -7,16 +7,25 @@ import (
 
 	"time_capsule_memories/internal/models"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const dbTimeout = 5 * time.Second
 
-type Capsule struct {
-	pool *pgxpool.Pool
+// dbPool is the subset of *pgxpool.Pool that repositories use; pgxmock
+// satisfies it for tests.
+type dbPool interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
-func NewCapsule(pool *pgxpool.Pool) *Capsule {
+type Capsule struct {
+	pool dbPool
+}
+
+func NewCapsule(pool dbPool) *Capsule {
 	return &Capsule{pool: pool}
 }
 
