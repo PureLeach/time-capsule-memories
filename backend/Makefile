@@ -16,6 +16,10 @@ test:
 	go test -v -count=1 ./...
 
 
+lint:
+	golangci-lint run ./...
+
+
 docs_generation:
 	swag init -g cmd/main.go
 
