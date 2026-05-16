@@ -4,19 +4,34 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
-	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/models"
-	"time_capsule_memories/internal/repository"
 )
 
-type CapsuleService struct {
-	repo   *repository.Capsule
-	store  *minio_client.Store
-	mailer *Mailer
+type CapsuleRepository interface {
+	Create(ctx context.Context, capsule *models.CreateCapsuleRequest) (*models.CapsuleResponse, error)
+	ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleResponse, error)
+	SetStatus(ctx context.Context, capsuleID int, status string) error
 }
 
-func NewCapsuleService(repo *repository.Capsule, store *minio_client.Store, mailer *Mailer) *CapsuleService {
+type ObjectStore interface {
+	GetFilesInDirectory(ctx context.Context, directoryUUID string) ([]models.FileObject, error)
+	GeneratePresignedUploadURL(ctx context.Context, objectName string, expiration time.Duration) (string, error)
+	Ping(ctx context.Context) error
+}
+
+type Mailer interface {
+	Send(ctx context.Context, subject, body, to string, attachments []models.FileObject) error
+}
+
+type CapsuleService struct {
+	repo   CapsuleRepository
+	store  ObjectStore
+	mailer Mailer
+}
+
+func NewCapsuleService(repo CapsuleRepository, store ObjectStore, mailer Mailer) *CapsuleService {
 	return &CapsuleService{repo: repo, store: store, mailer: mailer}
 }
 

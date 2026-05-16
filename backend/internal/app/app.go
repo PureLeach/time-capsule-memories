@@ -62,7 +62,7 @@ func New(ctx context.Context) (*App, error) {
 
 	capsuleRepo := repository.NewCapsule(pool)
 	feedbackRepo := repository.NewFeedback(pool)
-	mailer := services.NewMailer(cfg)
+	mailer := services.NewSMTPMailer(cfg)
 	capsuleService := services.NewCapsuleService(capsuleRepo, store, mailer)
 
 	dispatcher := jobs.NewDispatcher(capsuleRepo, capsuleService)

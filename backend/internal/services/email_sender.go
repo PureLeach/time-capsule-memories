@@ -16,7 +16,7 @@ import (
 	"time_capsule_memories/internal/models"
 )
 
-type Mailer struct {
+type SMTPMailer struct {
 	host     string
 	port     string
 	from     string
@@ -24,8 +24,8 @@ type Mailer struct {
 	timeout  time.Duration
 }
 
-func NewMailer(cfg *config.Config) *Mailer {
-	return &Mailer{
+func NewSMTPMailer(cfg *config.Config) *SMTPMailer {
+	return &SMTPMailer{
 		host:     cfg.SMTPHost,
 		port:     cfg.SMTPPort,
 		from:     cfg.SMTPFrom,
@@ -34,7 +34,7 @@ func NewMailer(cfg *config.Config) *Mailer {
 	}
 }
 
-func (m *Mailer) Send(ctx context.Context, subject, body, to string, attachments []models.FileObject) error {
+func (m *SMTPMailer) Send(ctx context.Context, subject, body, to string, attachments []models.FileObject) error {
 	message, err := buildMessage(m.from, subject, body, to, attachments)
 	if err != nil {
 		return fmt.Errorf("failed to create message: %v", err)
