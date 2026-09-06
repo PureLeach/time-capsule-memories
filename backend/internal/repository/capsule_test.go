@@ -29,7 +29,7 @@ func TestCapsule_ClaimDue(t *testing.T) {
 
 	// Both halves are load-bearing: the WHERE matches the partial index, and
 	// SKIP LOCKED is the concurrency guarantee.
-	mock.ExpectQuery(`(?s)status = 'waiting'.*FOR UPDATE SKIP LOCKED`).
+	mock.ExpectQuery(`(?s)status = 'waiting' AND send_at <= NOW\(\).*FOR UPDATE SKIP LOCKED`).
 		WithArgs(100).
 		WillReturnRows(rows)
 

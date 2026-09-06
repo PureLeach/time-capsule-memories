@@ -60,7 +60,7 @@ func (r *Capsule) ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleRes
 	const query = `
 	WITH due AS (
 	    SELECT id FROM capsules
-	    WHERE status = 'waiting' AND send_at < CURRENT_DATE + INTERVAL '1 day'
+	    WHERE status = 'waiting' AND send_at <= NOW()
 	    ORDER BY send_at
 	    FOR UPDATE SKIP LOCKED
 	    LIMIT $1
