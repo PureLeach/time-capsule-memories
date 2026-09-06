@@ -1,10 +1,8 @@
 <template>
-  <nav class="navigation-menu">
-    <router-link to="/" class="menu-item">
-      {{ t('menu.home') }}
-    </router-link>
-    <router-link to="/about" class="menu-item">
-      {{ t('menu.about') }}
+  <nav class="nav">
+    <router-link v-for="link in links" :key="link.to" :to="link.to" class="nav-link">
+      <span class="nav-index mono">{{ link.index }}</span>
+      <span class="nav-label">{{ t(link.label) }}</span>
     </router-link>
   </nav>
 </template>
@@ -13,92 +11,76 @@
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
+
+const links = [
+  { to: '/', label: 'menu.home', index: '01' },
+  { to: '/form', label: 'menu.create', index: '02' },
+  { to: '/about', label: 'menu.about', index: '03' },
+];
 </script>
 
 <style scoped>
-.navigation-menu {
+.nav {
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(0, 0, 51, 0.9),
-    rgba(20, 24, 82, 0.8),
-    rgba(47, 79, 79, 0.9)
-  );
-  border-radius: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  position: fixed;
-  top: 3px;
-  left: 1px;
+  gap: 0.35rem;
 }
 
-.menu-item {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 150px;
-  height: 30px;
-  color: #f0f8ff;
-  font-size: 1rem;
-  font-weight: bold;
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  transition:
-    color 0.3s ease,
-    transform 0.3s ease;
-  padding: 5px 10px;
-  border-radius: 8px;
+.nav-link {
   position: relative;
-}
-
-.menu-item:hover {
-  color: #87ceeb;
-  transform: scale(1.1);
-}
-
-.menu-item::before,
-.menu-item::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  background: #87ceeb;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink-soft);
   transition:
-    width 0.4s ease,
-    opacity 0.4s ease;
-  opacity: 0;
+    color 0.25s ease,
+    background 0.25s ease;
 }
 
-.menu-item::before {
-  bottom: 0;
-  left: 0;
+.nav-link:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.menu-item::after {
-  top: 0;
-  right: 0;
+.nav-index {
+  font-size: 0.56rem;
+  color: var(--ink-faint);
+  transition: color 0.25s ease;
 }
 
-.menu-item:hover::before,
-.menu-item:hover::after {
-  width: 100%;
-  opacity: 1;
+.nav-label {
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
 }
 
-.navigation-menu::before {
+.nav-link.router-link-exact-active {
+  color: var(--ink);
+}
+
+.nav-link.router-link-exact-active .nav-index {
+  color: var(--aqua);
+}
+
+/* Active tab is marked by a lit rail rather than a filled pill. */
+.nav-link.router-link-exact-active::after {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 140%;
-  height: 140%;
-  background: radial-gradient(circle, rgba(72, 61, 139, 0.4), transparent 70%);
-  transform: translate(-50%, -50%);
-  z-index: -1;
-  filter: blur(15px);
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 2px;
+  height: 1px;
+  background: var(--aqua);
+  box-shadow: var(--glow-aqua);
+}
+
+@media (max-width: 640px) {
+  .nav-index {
+    display: none;
+  }
+  .nav-link {
+    padding: 0.5rem 0.55rem;
+  }
 }
 </style>

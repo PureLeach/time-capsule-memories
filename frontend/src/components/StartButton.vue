@@ -1,68 +1,87 @@
 <template>
-  <falling-stars ref="stars" />
-  <el-button type="primary" class="start-button" @click="handleClick">
-    <slot />
-  </el-button>
+  <warp-overlay ref="warp" @finished="navigate" />
+  <button type="button" class="launch" @click="handleClick">
+    <span class="launch-glow"></span>
+    <span class="launch-label"><slot /></span>
+    <span class="launch-arrow">→</span>
+  </button>
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import FallingStars from './FallingStars.vue';
+import WarpOverlay from './WarpOverlay.vue';
 
 const props = defineProps({
   to: { type: String, required: true },
-  // Held back so the star animation plays before the route swaps the page.
-  delayMs: { type: Number, default: 1500 },
 });
 
 const router = useRouter();
-const stars = ref(null);
-let timer = null;
+const warp = ref(null);
 
-function handleClick() {
-  stars.value?.trigger();
-  clearTimeout(timer);
-  timer = setTimeout(() => router.push(props.to), props.delayMs);
-}
-
-onBeforeUnmount(() => clearTimeout(timer));
+const handleClick = () => warp.value?.trigger();
+const navigate = () => router.push(props.to);
 </script>
 
 <style scoped>
-.start-button {
+.launch {
   position: relative;
-  padding: 20px 40px;
-  border-radius: 25px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #fff;
-  background: linear-gradient(135deg, #1d2a6c, #0d1b2a);
-  border: 2px solid #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 2.2rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 999px;
+  background: rgba(94, 242, 224, 0.06);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-  transition: all 0.3s ease;
-  overflow: hidden;
   cursor: pointer;
-  min-width: 150px;
-  max-width: 300px;
+  overflow: hidden;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
 }
 
-.start-button::before {
-  content: '';
+.launch:hover {
+  transform: translateY(-2px);
+  border-color: var(--aqua);
+  box-shadow:
+    0 0 30px rgba(94, 242, 224, 0.3),
+    inset 0 0 24px rgba(94, 242, 224, 0.12);
+}
+
+.launch:active {
+  transform: translateY(0);
+}
+
+/* A light sweeps across the button on hover. */
+.launch-glow {
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  background: linear-gradient(45deg, #ff007f, #00aaff, #ff007f);
-  z-index: -1;
-  filter: blur(10px);
-  opacity: 0.8;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.28), transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
 }
 
-.start-button:hover {
-  background: #333;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 1);
+.launch:hover .launch-glow {
+  transform: translateX(120%);
+}
+
+.launch-label,
+.launch-arrow {
+  position: relative;
+}
+
+.launch-arrow {
+  color: var(--aqua);
+  transition: transform 0.3s ease;
+}
+
+.launch:hover .launch-arrow {
+  transform: translateX(5px);
 }
 </style>

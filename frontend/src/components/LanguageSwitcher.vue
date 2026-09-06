@@ -1,73 +1,73 @@
 <template>
-  <button type="button" class="language-switcher" :aria-label="switchLabel" @click="toggleLanguage">
-    <span class="flag-container" :class="{ flipping: isFlipping }">
-      <img :src="flagSrc" :alt="flagAlt" class="flag" />
+  <button type="button" class="lang" :aria-label="t('menu.switchLanguage')" @click="toggle">
+    <span
+      v-for="code in SUPPORTED_LANGUAGES"
+      :key="code"
+      class="lang-option"
+      :class="{ 'is-on': appStore.language === code }"
+    >
+      {{ code.toUpperCase() }}
     </span>
+    <span class="lang-thumb" :style="{ transform: `translateX(${isEnglish ? 0 : 100}%)` }"></span>
   </button>
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppStore } from '@/store';
-import enFlag from '@/assets/flags/en.svg';
-import ruFlag from '@/assets/flags/ru.svg';
-
-const FLIP_MS = 300;
+import { SUPPORTED_LANGUAGES, useAppStore } from '@/store';
 
 const { locale, t } = useI18n();
 const appStore = useAppStore();
-const isFlipping = ref(false);
-let timer = null;
 
 const isEnglish = computed(() => appStore.language === 'en');
-const flagSrc = computed(() => (isEnglish.value ? enFlag : ruFlag));
-const flagAlt = computed(() => (isEnglish.value ? 'English' : 'Русский'));
-const switchLabel = computed(() => t('menu.switchLanguage'));
 
-function toggleLanguage() {
-  isFlipping.value = true;
-  clearTimeout(timer);
-  timer = setTimeout(() => {
-    const next = isEnglish.value ? 'ru' : 'en';
-    appStore.setLanguage(next);
-    locale.value = next;
-    isFlipping.value = false;
-  }, FLIP_MS);
+function toggle() {
+  const next = isEnglish.value ? 'ru' : 'en';
+  appStore.setLanguage(next);
+  locale.value = next;
 }
-
-onBeforeUnmount(() => clearTimeout(timer));
 </script>
 
 <style scoped>
-.language-switcher {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-}
-.flag-container {
-  width: 30px;
-  height: 30px;
+.lang {
+  position: relative;
   display: flex;
-  justify-content: center;
   align-items: center;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transition: background 0.3s ease;
-  perspective: 600px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  overflow: hidden;
 }
-.flag-container:hover {
-  background: rgba(255, 255, 255, 0.4);
+
+.lang-option {
+  position: relative;
+  z-index: 1;
+  width: 38px;
+  padding: 0.3rem 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  transition: color 0.3s ease;
 }
-.flag {
-  width: 20px;
-  height: 20px;
-  transition: transform 0.3s ease;
-  backface-visibility: hidden;
-  transform-style: preserve-3d;
+
+.lang-option.is-on {
+  color: var(--void-0);
 }
-.flipping .flag {
-  transform: rotateY(180deg);
+
+.lang-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: 38px;
+  border-radius: 999px;
+  background: var(--aqua);
+  box-shadow: var(--glow-aqua);
+  transition: transform 0.35s cubic-bezier(0.4, 1.4, 0.5, 1);
 }
 </style>

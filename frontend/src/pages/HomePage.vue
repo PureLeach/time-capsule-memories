@@ -1,11 +1,27 @@
 <template>
   <main-layout>
     <section class="hero">
-      <h1>{{ t('welcome.title') }}</h1>
-      <p>{{ t('welcome.description') }}</p>
-      <start-button to="/form" class="welcome-button">
-        {{ t('welcome.buttonText') }}
-      </start-button>
+      <div class="hero-copy">
+        <span class="eyebrow">{{ t('welcome.eyebrow') }}</span>
+        <h1 class="hero-title">
+          <span class="line">{{ t('welcome.titleLine1') }}</span>
+          <span class="line accent">{{ t('welcome.titleLine2') }}</span>
+        </h1>
+        <p class="hero-lead">{{ t('welcome.description') }}</p>
+
+        <start-button to="/form">{{ t('welcome.buttonText') }}</start-button>
+
+        <dl class="specs">
+          <div v-for="spec in specs" :key="spec.key" class="spec">
+            <dt class="mono">{{ t(`welcome.specs.${spec.key}.label`) }}</dt>
+            <dd>{{ t(`welcome.specs.${spec.key}.value`) }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="hero-dial">
+        <chrono-dial />
+      </div>
     </section>
   </main-layout>
 </template>
@@ -14,93 +30,98 @@
 import { useI18n } from 'vue-i18n';
 import MainLayout from '@/layouts/MainLayout.vue';
 import StartButton from '@/components/StartButton.vue';
+import ChronoDial from '@/components/ChronoDial.vue';
 
 const { t } = useI18n();
+const specs = [{ key: 'delivery' }, { key: 'payload' }, { key: 'horizon' }];
 </script>
 
 <style scoped>
 .hero {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+  min-height: 62vh;
+}
+
+.hero-copy {
   display: flex;
   flex-direction: column;
-  background-size: cover;
-  justify-content: center;
-  text-align: center;
-  align-items: center;
-  margin: 50px auto;
-  padding: 20px;
-  box-sizing: border-box;
-  font-family: 'Arial', sans-serif;
-  color: white;
+  align-items: flex-start;
+  gap: 1.5rem;
 }
 
-h1 {
-  font-size: 3rem;
-  text-shadow:
-    0 0 10px rgba(255, 255, 255, 0.8),
-    0 0 20px rgba(255, 255, 255, 0.6);
-  margin-bottom: 20px;
+.hero-title {
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(2.4rem, 5.4vw, 4.1rem);
+  font-weight: 300;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
 }
 
-p {
-  font-size: 1.2rem;
-  margin-bottom: 30px;
-  opacity: 0.9;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+.line.accent {
+  background: linear-gradient(100deg, var(--aqua), var(--violet) 55%, var(--amber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-.welcome-button {
-  padding: 20px 40px;
-  background: linear-gradient(45deg, #6a0dad, #4b0082, #0000ff);
-  border: none;
-  border-radius: 50px;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow:
-    0 0 25px rgba(255, 255, 255, 0.6),
-    0 0 40px rgba(0, 0, 255, 0.6);
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease,
-    background 0.3s ease;
-  position: relative;
+.hero-lead {
+  max-width: 46ch;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.specs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  width: 100%;
+  margin-top: 0.5rem;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 12px;
   overflow: hidden;
-  z-index: 1;
 }
 
-.welcome-button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300%;
-  height: 300%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 20%, rgba(0, 0, 255, 0.8) 80%);
-  transition:
-    width 0.4s,
-    height 0.4s;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  z-index: -1;
+.spec {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem 1rem;
+  background: rgba(8, 10, 22, 0.7);
 }
 
-.welcome-button:hover {
-  transform: scale(1.1);
-  box-shadow:
-    0 0 35px rgba(255, 255, 255, 0.8),
-    0 0 50px rgba(0, 0, 255, 0.8);
+.spec dt {
+  font-size: 0.56rem;
 }
 
-.welcome-button:hover::before {
-  width: 500%;
-  height: 500%;
+.spec dd {
+  font-size: 0.86rem;
+  color: var(--ink);
 }
 
-.welcome-button:active {
-  transform: scale(1);
-  box-shadow:
-    0 0 25px rgba(255, 255, 255, 0.6),
-    0 0 35px rgba(0, 0, 255, 0.6);
+.hero-dial {
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-copy {
+    align-items: center;
+  }
+  .hero-dial {
+    order: -1;
+  }
+  .specs {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
