@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     working-directory: backend
@@ -26,17 +30,13 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
-          cache: false
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
 
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      - name: Verify go.mod and go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
@@ -44,6 +44,11 @@ jobs:
           version: v2.12.2
           working-directory: backend
 
-      - run: go test ./...
+      - name: Verify the Swagger spec matches the handler annotations
+        run: |
+          go run github.com/swaggo/swag/cmd/swag@v1.16.4 init -g cmd/main.go
+          git diff --exit-code docs
 
-      - run: go build -o /tmp/server ./cmd
+      - run: go test -race ./...
+
+      - run: go build ./...
