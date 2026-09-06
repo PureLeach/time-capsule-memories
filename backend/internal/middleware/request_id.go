@@ -7,9 +7,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// RequestID wraps echo's RequestID middleware so the generated id is also
-// stashed on the request context. Downstream code reads it through
-// logging.FromContext to attach request_id to every log line.
+// RequestID also stashes echo's generated id on the request context, where
+// logging.FromContext picks it up.
 func RequestID() echo.MiddlewareFunc {
 	base := middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		TargetHeader: echo.HeaderXRequestID,

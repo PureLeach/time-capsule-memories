@@ -7,9 +7,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// AccessLog emits a structured slog line per request once the handler returns.
-// Paths listed in skipPaths are not logged — handy for liveness/readiness
-// probes that otherwise dominate the log volume.
+// AccessLog logs one line per request. skipPaths exists for the probes, which
+// would otherwise dominate the log volume.
 func AccessLog(skipPaths ...string) echo.MiddlewareFunc {
 	skip := make(map[string]struct{}, len(skipPaths))
 	for _, p := range skipPaths {
