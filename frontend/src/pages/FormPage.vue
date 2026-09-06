@@ -1,181 +1,198 @@
 <template>
   <main-layout>
     <el-card class="form-card">
-      <!-- Rules Form -->
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="150px" class="custom-form">
-        <!-- Sender's Name -->
-        <el-form-item :label="$t('form.senderName')" prop="name">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="150px" class="custom-form">
+        <el-form-item :label="t('form.senderName')" prop="name">
           <el-input
             v-model="form.name"
-            maxlength="30"
-            :placeholder="$t('form.namePlaceholder')"
+            maxlength="100"
+            :placeholder="t('form.namePlaceholder')"
             class="input-field"
           />
         </el-form-item>
 
-        <!-- Delivery Date -->
-        <el-form-item :label="$t('form.deliveryDate')" prop="date">
+        <el-form-item :label="t('form.deliveryDate')" prop="date">
           <el-date-picker
             v-model="form.date"
             type="date"
             format="DD/MM/YYYY"
-            :placeholder="$t('form.deliveryDate')"
-            style="width: 96%; height: 40px; font-size: 14px"
-            :disabled-date="disablePastDates"
-            class="input-field"
+            :placeholder="t('form.pickDate')"
+            :disabled-date="isNotFutureDate"
+            class="input-field date-field"
           />
         </el-form-item>
 
-        <!-- Message -->
-        <el-form-item :label="$t('form.message')" prop="message">
+        <el-form-item :label="t('form.message')" prop="message">
           <el-input
             v-model="form.message"
             type="textarea"
             maxlength="4096"
-            :placeholder="$t('form.message')"
+            show-word-limit
+            :placeholder="t('form.message')"
             class="input-field custom-input"
           />
         </el-form-item>
 
-        <!-- Recipient Email -->
-        <el-form-item :label="$t('form.recipientEmail')" prop="email">
+        <el-form-item :label="t('form.recipientEmail')" prop="email">
           <el-input
             v-model="form.email"
-            :placeholder="$t('form.recipientEmail')"
+            maxlength="255"
+            :placeholder="t('form.recipientEmail')"
             class="input-field"
           />
         </el-form-item>
 
-        <!-- Attachments -->
-        <el-form-item :label="$t('form.attachments')">
+        <el-form-item :label="t('form.attachments')">
           <div class="attachment-container">
             <el-upload
               class="file-upload"
               list-type="picture-card"
               accept="image/*"
-              :http-request="handleUpload"
-              :limit="3"
-              :before-upload="beforeUpload"
-              :file-list="form.attachments"
-              @exceed="handleExceed"
+              :limit="MAX_ATTACHMENTS"
+              :http-request="uploadAttachmentRequest"
+              :before-upload="validateAttachment"
+              :on-remove="handleRemove"
+              :on-exceed="handleExceed"
             >
-              <el-icon>
-                <Plus />
-              </el-icon>
+              <el-icon><Plus /></el-icon>
             </el-upload>
           </div>
         </el-form-item>
+
+        <el-form-item class="form-buttons">
+          <div class="submit-reset-container">
+            <el-button
+              type="primary"
+              class="submit-button"
+              :loading="isSubmitting"
+              @click="submitForm"
+            >
+              {{ t('form.submit') }}
+            </el-button>
+            <el-button type="default" class="reset-button" @click="resetForm">
+              {{ t('form.reset') }}
+            </el-button>
+          </div>
+        </el-form-item>
       </el-form>
-      <!-- Submit and Reset Buttons -->
-      <el-form-item class="form-buttons">
-        <div class="submit-reset-container">
-          <el-button type="primary" @click="submitForm" class="submit-button">
-            {{ $t('form.submit') }}
-          </el-button>
-          <el-button type="default" @click="resetForm" class="reset-button">
-            {{ $t('form.reset') }}
-          </el-button>
-        </div>
-      </el-form-item>
     </el-card>
   </main-layout>
 </template>
 
-<script>
-import MainLayout from '@/layouts/MainLayout.vue';
+<script setup>
+import { computed, reactive, ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 import { fileTypeFromBuffer } from 'file-type';
+import { ElMessage } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
-import { createCapsule, getPresignedUrl, uploadToS3 } from '@/api/capsules';
+import { useI18n } from 'vue-i18n';
+import MainLayout from '@/layouts/MainLayout.vue';
+import { createCapsule, getUploadTarget, uploadAttachment } from '@/api/capsules';
 
-export default {
-  components: { MainLayout, Plus },
-  data() {
-    return {
-      form: {
-        name: '',
-        date: '',
-        message: '',
-        email: '',
-      },
-      uniqueId: uuidv4(),
-    };
-  },
-  computed: {
-    rules() {
-      return {
-        name: [{ required: true, message: this.$t('form.nameRequired'), trigger: 'blur' }],
-        date: [{ required: true, message: this.$t('form.dateRequired'), trigger: 'change' }],
-        message: [{ required: true, message: this.$t('form.messageRequired'), trigger: 'blur' }],
-        email: [
-          { required: true, message: this.$t('form.emailRequired'), trigger: 'blur' },
-          { type: 'email', message: this.$t('form.invalidEmail'), trigger: 'blur' },
-        ],
-      };
-    },
-  },
-  created() {
-    this.uniqueId = uuidv4();
-  },
-  methods: {
-    disablePastDates(date) {
-      return date.getTime() < Date.now();
-    },
-    formatDate(date) {
-      return dayjs(date).format('YYYY-MM-DD');
-    },
-    async handleUpload({ file }) {
-      const presignedUrl = await getPresignedUrl(this.uniqueId);
-      await uploadToS3(presignedUrl, file);
-    },
-    async beforeUpload(file) {
-      const arrayBuffer = await file.arrayBuffer();
-      const type = await fileTypeFromBuffer(arrayBuffer);
+// Mirrors the signed upload policy. Checking here only buys faster feedback.
+const MAX_ATTACHMENTS = 3;
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-      if (file.size > 5 * 1024 * 1024) {
-        this.$message.error(this.$t('form.uploadFileSizeError'));
-        return false;
-      }
+const { t } = useI18n();
 
-      if (!type || !type.mime.startsWith('image/')) {
-        this.$message.error(this.$t('form.uploadFileTypeError'));
-        return false;
-      }
+const formRef = ref(null);
+const isSubmitting = ref(false);
+const uploadedCount = ref(0);
+// One folder per capsule links its uploads to the row, without the backend ever
+// seeing the files.
+const filesFolderUuid = ref(uuidv4());
 
-      return true;
-    },
-    handleExceed() {
-      this.$message.warning(this.$t('form.uploadLimitExceeded'));
-    },
-    submitForm() {
-      this.$refs.formRef.validate(async (valid) => {
-        if (!valid) return;
-        try {
-          await createCapsule({
-            message: this.form.message,
-            recipient_email: this.form.email,
-            send_at: this.formatDate(this.form.date),
-            sender_name: this.form.name,
-            files_folder_uuid: this.uniqueId,
-          });
-          this.resetForm();
-        } catch (error) {
-          this.$message.error(error.message);
-        }
-      });
-    },
-    resetForm() {
-      this.$refs.formRef.resetFields();
-      this.form.attachments = [];
-      this.uniqueId = uuidv4();
-    },
-  },
-};
+const form = reactive({ name: '', date: '', message: '', email: '' });
+
+const rules = computed(() => ({
+  name: [{ required: true, message: t('form.nameRequired'), trigger: 'blur' }],
+  date: [{ required: true, message: t('form.dateRequired'), trigger: 'change' }],
+  message: [{ required: true, message: t('form.messageRequired'), trigger: 'blur' }],
+  email: [
+    { required: true, message: t('form.emailRequired'), trigger: 'blur' },
+    { type: 'email', message: t('form.invalidEmail'), trigger: 'blur' },
+  ],
+}));
+
+// The backend requires a date strictly after today.
+function isNotFutureDate(date) {
+  return dayjs(date).endOf('day').isBefore(dayjs().endOf('day').add(1, 'millisecond'));
+}
+
+// Detected from the magic bytes: the browser's MIME type comes from the file
+// extension and is trivially wrong.
+const detectedTypes = new WeakMap();
+
+async function validateAttachment(file) {
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    ElMessage.error(t('form.uploadFileSizeError'));
+    return false;
+  }
+
+  const detected = await fileTypeFromBuffer(await file.arrayBuffer());
+  if (!detected || !ALLOWED_IMAGE_TYPES.includes(detected.mime)) {
+    ElMessage.error(t('form.uploadFileTypeError'));
+    return false;
+  }
+
+  detectedTypes.set(file, detected.mime);
+  return true;
+}
+
+async function uploadAttachmentRequest({ file, onSuccess, onError }) {
+  try {
+    const contentType = detectedTypes.get(file);
+    const target = await getUploadTarget(filesFolderUuid.value, contentType);
+    await uploadAttachment(target, file);
+    uploadedCount.value += 1;
+    onSuccess();
+  } catch (error) {
+    ElMessage.error(t('form.uploadFailed'));
+    onError(error);
+  }
+}
+
+function handleRemove() {
+  uploadedCount.value = Math.max(0, uploadedCount.value - 1);
+}
+
+function handleExceed() {
+  ElMessage.warning(t('form.uploadLimitExceeded', { count: MAX_ATTACHMENTS }));
+}
+
+async function submitForm() {
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
+
+  isSubmitting.value = true;
+  try {
+    await createCapsule({
+      sender_name: form.name,
+      send_at: dayjs(form.date).format('YYYY-MM-DD'),
+      message: form.message,
+      recipient_email: form.email,
+      // Omitted when nothing was uploaded, so the dispatcher skips the fetch.
+      ...(uploadedCount.value > 0 ? { files_folder_uuid: filesFolderUuid.value } : {}),
+    });
+    ElMessage.success(t('form.submitSuccess'));
+    resetForm();
+  } catch (error) {
+    ElMessage.error(error.message);
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+
+function resetForm() {
+  formRef.value?.resetFields();
+  uploadedCount.value = 0;
+  filesFolderUuid.value = uuidv4();
+}
 </script>
 
 <style scoped>
-/* The main form */
 .form-card {
   display: flex;
   max-width: 530px;
@@ -198,7 +215,6 @@ export default {
   border: none;
 }
 
-/* Labels */
 .el-form-item {
   display: flex;
   align-items: center;
@@ -209,7 +225,6 @@ export default {
   color: #dfeefa;
 }
 
-/* Labels - right alignment */
 .el-form-item .el-form-item__label {
   text-align: right;
   padding-right: 20px;
@@ -231,8 +246,6 @@ export default {
   border: 1px solid #ddd;
 }
 
-/* Attached files */
-
 .attachment-container {
   display: flex;
   justify-content: center;
@@ -240,17 +253,12 @@ export default {
 
 ::v-deep(.el-upload-list__item-preview) {
   display: none !important;
-  /* Completely hides the preview icon. */
 }
 
 ::v-deep(.el-upload-list__item-delete) {
   position: absolute;
-  /* Absolute positioning to adjust the location */
   transform: translate(-50%, 0);
-  /* Shift for precise centering */
 }
-
-/* Buttons */
 
 .form-buttons {
   display: flex;
