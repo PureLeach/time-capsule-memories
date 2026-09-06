@@ -1,58 +1,97 @@
 {
-  "pageTitles": {
-    "home": "Home",
-    "form": "Create a capsule",
-    "about": "About the project"
-  },
-  "welcome": {
-    "title": "Time Capsule of Memories",
-    "description": "Send your memories to the future",
-    "buttonText": "Start"
+  "pageTitles": { "home": "Home", "form": "Create a capsule", "about": "About the project" },
+  "layout": {
+    "tagline": "Messages across time",
+    "status": "Dispatcher online"
   },
   "menu": {
-    "home": "Main page",
-    "about": "About site",
+    "home": "Overview",
+    "create": "Create",
+    "about": "About",
     "switchLanguage": "Switch language"
   },
+  "welcome": {
+    "eyebrow": "Chronological delivery service",
+    "titleLine1": "Send a memory",
+    "titleLine2": "into the future",
+    "description": "Write a message, attach a few images, and set the date it should arrive. The capsule is sealed now and delivered by email exactly when you asked — a year from now, or a decade.",
+    "buttonText": "Launch a capsule",
+    "specs": {
+      "delivery": { "label": "Delivery", "value": "Email, on the date you pick" },
+      "payload": { "label": "Payload", "value": "4096 characters · 3 images" },
+      "horizon": { "label": "Horizon", "value": "Tomorrow to forever" }
+    }
+  },
   "form": {
-    "senderName": "Sender's Name",
-    "deliveryDate": "Delivery Date",
+    "eyebrow": "Capsule console",
+    "title": "Compose your capsule",
+    "senderName": "Sender",
+    "namePlaceholder": "Your name",
+    "recipientEmail": "Recipient",
+    "emailPlaceholder": "name{'@'}example.com",
+    "deliveryDate": "Delivery date",
+    "pickDate": "Choose when it arrives",
     "message": "Message",
-    "recipientEmail": "Recipient's Email",
-    "attachments": "Attach images",
-    "pickDate": "Pick a date",
-    "namePlaceholder": "Enter your name",
+    "messagePlaceholder": "What do you want them to read on that day?",
+    "attachments": "Images",
+    "attachmentsHint": "Up to 3 images, 5 MB each. JPEG, PNG, WEBP or GIF.",
+    "shortcuts": { "year": "In a year", "fiveYears": "In 5 years", "decade": "In a decade" },
+    "countdownLabel": "Time to delivery",
+    "countdownEmpty": "Pick a delivery date to start the countdown.",
+    "unit": { "years": "years", "days": "days", "hours": "hrs", "minutes": "min" },
+    "preview": {
+      "tag": "Sealed payload",
+      "placeholder": "Your message will appear here as you write it.",
+      "images": "{count} attached",
+      "open": "Capsule open",
+      "sealed": "Capsule sealed"
+    },
     "nameRequired": "Name required",
     "messageRequired": "Message required",
     "dateRequired": "Date required",
     "emailRequired": "Email required",
     "invalidEmail": "Invalid email",
-    "submit": "Submit",
-    "reset": "Reset",
-    "submitSuccess": "Your capsule is on its way to the future",
+    "submit": "Seal capsule",
+    "sealing": "Sealing",
+    "reset": "Clear",
+    "sealedTag": "Transmission scheduled",
+    "sealedTitle": "Your capsule is sealed",
+    "sealedText": "It will reach {email} on {date}. Nothing left to do — the dispatcher takes it from here.",
+    "sealedId": "Capsule",
+    "sealedStatus": "Status",
+    "sealedClose": "Done",
     "uploadFileTypeError": "Only image files are allowed",
     "uploadFileSizeError": "The file size exceeds the 5 MB limit",
     "uploadLimitExceeded": "You can upload up to {count} files",
     "uploadFailed": "The image could not be uploaded. Please try again"
   },
   "about": {
-    "title": "About the Project",
-    "description": "This project is a time capsule for your memories. Send memories to yourself and your loved ones in the future!",
+    "eyebrow": "Behind the project",
+    "title": "About the project",
+    "description": "A time capsule for your memories — send something to yourself or to the people you care about, and let it arrive years from now.",
+    "steps": {
+      "1": "You write a message and attach images in the browser.",
+      "2": "Images go straight to object storage over a signed upload target — the API never touches the bytes.",
+      "3": "The capsule is stored in Postgres with the delivery date you chose.",
+      "4": "A scheduled dispatcher claims capsules that are due and sends them over SMTP."
+    },
     "spoiler": {
-      "open": "More info",
-      "close": "Hide info",
-      "text": "This site is a pet project developed by Maxim Barannikov (tg:@PureLeach). The goal was to go through every stage of building a web application single-handedly: design, code, frontend and backend integration, and deployment.\n\nSince it was built alone with limited time, bugs may show up. If you notice one, please report it through the feedback form — it helps me make the project better. Any feedback and suggestions are welcome.\n\nThe full source code is publicly available on <a href='https://github.com/MaxBarannikov/time-capsule-memories' target='_blank' rel='noopener noreferrer' style='color: yellow;'>GitHub</a>. Thank you for your attention and support!"
+      "open": "More about the author",
+      "close": "Hide",
+      "text": "This site is a pet project developed by Maxim Barannikov (tg:{'@'}PureLeach). The goal was to go through every stage of building a web application single-handedly: design, code, frontend and backend integration, and deployment.\n\nSince it was built alone with limited time, bugs may show up. If you notice one, please report it through the feedback form — it helps me make the project better. Any feedback and suggestions are welcome.\n\nThe full source code is publicly available on <a href='https://github.com/MaxBarannikov/time-capsule-memories' target='_blank' rel='noopener noreferrer'>GitHub</a>. Thank you for your attention and support!"
     },
     "form": {
-      "label": "Your thoughts and wishes:",
+      "eyebrow": "Feedback channel",
+      "label": "Your thoughts and wishes",
       "placeholder": "Write your message here...",
-      "submit": "Send",
+      "submit": "Transmit",
       "emptyMessage": "Please enter a message"
     },
     "modal": {
-      "title": "Your feedback has been submitted!",
-      "message": "Thank you for your feedback.",
-      "button": "Go to main page"
+      "tag": "Received",
+      "title": "Your feedback has been submitted",
+      "message": "Thank you — it genuinely helps.",
+      "button": "Back to overview"
     }
   }
 }

@@ -15,4 +15,8 @@ export default [
       globals: globals.browser,
     },
   },
+  {
+    files: ['scripts/**'],
+    languageOptions: { globals: globals.node },
+  },
 ];

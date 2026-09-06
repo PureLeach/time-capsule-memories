@@ -23,7 +23,7 @@ test: ## Run backend tests
 
 lint: ## Run backend and frontend linters
 	$(MAKE) -C backend lint
-	cd frontend && npm run lint && npm run format:check
+	cd frontend && npm run lint && npm run format:check && npm run check:i18n
 
 fmt: ## Format both sides of the project
 	$(MAKE) -C backend fmt
