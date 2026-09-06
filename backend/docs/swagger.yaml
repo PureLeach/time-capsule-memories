@@ -3,52 +3,51 @@ definitions:
   models.CapsuleResponse:
     properties:
       created_at:
-        description: Date and time when the capsule was created
         type: string
       files_folder_uuid:
-        description: Optional folder UUID for files
         type: string
       id:
-        description: Capsule ID
         type: integer
       message:
-        description: Message text
         type: string
       recipient_email:
-        description: Recipient's email address
         type: string
       send_at:
-        description: Date and time when the capsule is scheduled to be sent
         type: string
       sender_name:
-        description: Sender's name
         type: string
       status:
-        description: Status of the capsule (e.g., pending, sent)
-        type: string
+        $ref: '#/definitions/models.CapsuleStatus'
     type: object
+  models.CapsuleStatus:
+    enum:
+    - waiting
+    - in progress
+    - done
+    type: string
+    x-enum-varnames:
+    - StatusWaiting
+    - StatusInProgress
+    - StatusDone
   models.CreateCapsuleRequest:
     properties:
       files_folder_uuid:
-        description: Optional folder UUID for files
         example: 07023417-5079-429d-a113-cbef2ef164d7
         type: string
       message:
-        description: Message text to be sent
         example: Test Message
         maxLength: 4096
         type: string
       recipient_email:
-        description: Recipient's email address
         example: test@example.com
+        maxLength: 255
         type: string
       send_at:
-        description: Send date in string format
-        example: "2024-11-18"
+        example: "2099-11-18"
         type: string
       sender_name:
-        description: Sender's name
         example: John Doe
+        maxLength: 100
         type: string
     required:
     - message
@@ -59,7 +58,6 @@ definitions:
   models.CreateFeedbackRequest:
     properties:
       message:
-        description: The feedback message (up to 4096 characters)
         example: Test Message
         maxLength: 4096
         type: string
@@ -69,21 +67,19 @@ definitions:
   models.EmailDataRequest:
     properties:
       body:
-        description: Body content of the email with a maximum character limit
         example: Test body
         maxLength: 4096
         type: string
       files_folder_uuid:
-        description: Optional UUID for the folder containing attachments
         example: 07023417-5079-429d-a113-cbef2ef164d7
         type: string
       recipient_email:
-        description: Recipient's email address
         example: test@example.com
+        maxLength: 255
         type: string
       subject:
-        description: Subject of the email
         example: Test subject
+        maxLength: 255
         type: string
     required:
     - body
@@ -93,35 +89,33 @@ definitions:
   models.ErrorResponse:
     properties:
       error:
-        description: A brief description of the error
         type: string
     type: object
   models.FeedbackResponse:
     properties:
       created_at:
-        description: The date and time when the feedback was created
         type: string
       id:
-        description: The unique identifier for the feedback
         type: integer
       message:
-        description: The feedback message content
         type: string
     type: object
-  models.PresignedURLResponse:
+  models.PresignedUpload:
     properties:
-      presigned_url:
-        description: The generated presigned URL for file upload
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      url:
         type: string
     type: object
 host: backend.localhost
 info:
   contact:
-    name: API Support
-    url: http://www.example.com/support
-  description: REST API backend for the Time Capsule Memories project.
-  license:
-    name: MIT
+    name: Source and issues
+    url: https://github.com/MaxBarannikov/time-capsule-memories
+  description: Schedules messages, with optional image attachments, for delivery by
+    email on a future date.
   title: Time Capsule Memories API
   version: "1.0"
 paths:
@@ -129,7 +123,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new time capsule with the given parameters
+      description: Schedules a message, with optional attachments, for delivery on
+        a future date.
       parameters:
       - description: Capsule creation payload
         in: body
@@ -159,7 +154,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Stores user feedback in the database
+      description: Stores a free-form feedback message.
       parameters:
       - description: Feedback data
         in: body
@@ -187,39 +182,87 @@ paths:
       - feedback
   /generate-presigned-url:
     get:
-      consumes:
-      - application/json
-      description: Generates a presigned URL for uploading a file to a specific directory
-        (UUID) in MinIO.
+      description: Returns a signed multipart/form-data POST target scoped to one
+        directory. The signed policy pins the content type and caps the upload at
+        5 MB, so the limits hold even if the client ignores them. Submit the returned
+        fields verbatim, then the file part.
       parameters:
       - description: Target directory UUID
         in: query
         name: directory
         required: true
         type: string
+      - description: Image MIME type
+        enum:
+        - image/jpeg
+        - image/png
+        - image/webp
+        - image/gif
+        in: query
+        name: content_type
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Presigned URL generated successfully
+          description: Upload target generated successfully
           schema:
-            $ref: '#/definitions/models.PresignedURLResponse'
+            $ref: '#/definitions/models.PresignedUpload'
         "400":
           description: Invalid request
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Failed to generate presigned URL
+          description: Failed to generate upload target
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Generate a presigned URL for file upload
+      summary: Generate a presigned upload target for an attachment
       tags:
       - file
+  /healthz:
+    get:
+      description: Reports that the process is up. Does not touch dependencies.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is alive
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Liveness probe
+      tags:
+      - health
+  /readyz:
+    get:
+      description: Reports per-dependency health. Returns 503 when any check fails.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All dependencies reachable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: At least one dependency is down
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Readiness probe
+      tags:
+      - health
   /send-test-email:
     post:
       consumes:
       - application/json
-      description: Generates and sends a test email
+      description: Development-only helper for verifying SMTP delivery end to end.
+        Registered only when ENABLE_TEST_EMAIL_ENDPOINT is true, because it is unauthenticated
+        and would otherwise let anyone send mail through the configured relay.
       parameters:
       - description: Email payload
         in: body

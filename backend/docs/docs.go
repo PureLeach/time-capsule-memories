@@ -10,11 +10,8 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "API Support",
-            "url": "http://www.example.com/support"
-        },
-        "license": {
-            "name": "MIT"
+            "name": "Source and issues",
+            "url": "https://github.com/MaxBarannikov/time-capsule-memories"
         },
         "version": "{{.Version}}"
     },
@@ -23,7 +20,7 @@ const docTemplate = `{
     "paths": {
         "/capsules": {
             "post": {
-                "description": "Creates a new time capsule with the given parameters",
+                "description": "Schedules a message, with optional attachments, for delivery on a future date.",
                 "consumes": [
                     "application/json"
                 ],
@@ -69,7 +66,7 @@ const docTemplate = `{
         },
         "/feedback": {
             "post": {
-                "description": "Stores user feedback in the database",
+                "description": "Stores a free-form feedback message.",
                 "consumes": [
                     "application/json"
                 ],
@@ -115,17 +112,14 @@ const docTemplate = `{
         },
         "/generate-presigned-url": {
             "get": {
-                "description": "Generates a presigned URL for uploading a file to a specific directory (UUID) in MinIO.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Returns a signed multipart/form-data POST target scoped to one directory. The signed policy pins the content type and caps the upload at 5 MB, so the limits hold even if the client ignores them. Submit the returned fields verbatim, then the file part.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "file"
                 ],
-                "summary": "Generate a presigned URL for file upload",
+                "summary": "Generate a presigned upload target for an attachment",
                 "parameters": [
                     {
                         "type": "string",
@@ -133,13 +127,26 @@ const docTemplate = `{
                         "name": "directory",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            "image/jpeg",
+                            "image/png",
+                            "image/webp",
+                            "image/gif"
+                        ],
+                        "type": "string",
+                        "description": "Image MIME type",
+                        "name": "content_type",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Presigned URL generated successfully",
+                        "description": "Upload target generated successfully",
                         "schema": {
-                            "$ref": "#/definitions/models.PresignedURLResponse"
+                            "$ref": "#/definitions/models.PresignedUpload"
                         }
                     },
                     "400": {
@@ -149,7 +156,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to generate presigned URL",
+                        "description": "Failed to generate upload target",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -157,9 +164,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/healthz": {
+            "get": {
+                "description": "Reports that the process is up. Does not touch dependencies.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Liveness probe",
+                "responses": {
+                    "200": {
+                        "description": "Service is alive",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/readyz": {
+            "get": {
+                "description": "Reports per-dependency health. Returns 503 when any check fails.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "All dependencies reachable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "At least one dependency is down",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/send-test-email": {
             "post": {
-                "description": "Generates and sends a test email",
+                "description": "Development-only helper for verifying SMTP delivery end to end. Registered only when ENABLE_TEST_EMAIL_ENDPOINT is true, because it is unauthenticated and would otherwise let anyone send mail through the configured relay.",
                 "consumes": [
                     "application/json"
                 ],
@@ -206,38 +268,43 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "Date and time when the capsule was created",
                     "type": "string"
                 },
                 "files_folder_uuid": {
-                    "description": "Optional folder UUID for files",
                     "type": "string"
                 },
                 "id": {
-                    "description": "Capsule ID",
                     "type": "integer"
                 },
                 "message": {
-                    "description": "Message text",
                     "type": "string"
                 },
                 "recipient_email": {
-                    "description": "Recipient's email address",
                     "type": "string"
                 },
                 "send_at": {
-                    "description": "Date and time when the capsule is scheduled to be sent",
                     "type": "string"
                 },
                 "sender_name": {
-                    "description": "Sender's name",
                     "type": "string"
                 },
                 "status": {
-                    "description": "Status of the capsule (e.g., pending, sent)",
-                    "type": "string"
+                    "$ref": "#/definitions/models.CapsuleStatus"
                 }
             }
+        },
+        "models.CapsuleStatus": {
+            "type": "string",
+            "enum": [
+                "waiting",
+                "in progress",
+                "done"
+            ],
+            "x-enum-varnames": [
+                "StatusWaiting",
+                "StatusInProgress",
+                "StatusDone"
+            ]
         },
         "models.CreateCapsuleRequest": {
             "type": "object",
@@ -249,29 +316,26 @@ const docTemplate = `{
             ],
             "properties": {
                 "files_folder_uuid": {
-                    "description": "Optional folder UUID for files",
                     "type": "string",
                     "example": "07023417-5079-429d-a113-cbef2ef164d7"
                 },
                 "message": {
-                    "description": "Message text to be sent",
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test Message"
                 },
                 "recipient_email": {
-                    "description": "Recipient's email address",
                     "type": "string",
+                    "maxLength": 255,
                     "example": "test@example.com"
                 },
                 "send_at": {
-                    "description": "Send date in string format",
                     "type": "string",
-                    "example": "2024-11-18"
+                    "example": "2099-11-18"
                 },
                 "sender_name": {
-                    "description": "Sender's name",
                     "type": "string",
+                    "maxLength": 100,
                     "example": "John Doe"
                 }
             }
@@ -283,7 +347,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "message": {
-                    "description": "The feedback message (up to 4096 characters)",
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test Message"
@@ -299,24 +362,22 @@ const docTemplate = `{
             ],
             "properties": {
                 "body": {
-                    "description": "Body content of the email with a maximum character limit",
                     "type": "string",
                     "maxLength": 4096,
                     "example": "Test body"
                 },
                 "files_folder_uuid": {
-                    "description": "Optional UUID for the folder containing attachments",
                     "type": "string",
                     "example": "07023417-5079-429d-a113-cbef2ef164d7"
                 },
                 "recipient_email": {
-                    "description": "Recipient's email address",
                     "type": "string",
+                    "maxLength": 255,
                     "example": "test@example.com"
                 },
                 "subject": {
-                    "description": "Subject of the email",
                     "type": "string",
+                    "maxLength": 255,
                     "example": "Test subject"
                 }
             }
@@ -325,7 +386,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
-                    "description": "A brief description of the error",
                     "type": "string"
                 }
             }
@@ -334,24 +394,26 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "description": "The date and time when the feedback was created",
                     "type": "string"
                 },
                 "id": {
-                    "description": "The unique identifier for the feedback",
                     "type": "integer"
                 },
                 "message": {
-                    "description": "The feedback message content",
                     "type": "string"
                 }
             }
         },
-        "models.PresignedURLResponse": {
+        "models.PresignedUpload": {
             "type": "object",
             "properties": {
-                "presigned_url": {
-                    "description": "The generated presigned URL for file upload",
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "url": {
                     "type": "string"
                 }
             }
@@ -366,7 +428,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Time Capsule Memories API",
-	Description:      "REST API backend for the Time Capsule Memories project.",
+	Description:      "Schedules messages, with optional image attachments, for delivery by email on a future date.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
