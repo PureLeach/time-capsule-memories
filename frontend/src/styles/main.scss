@@ -1,15 +1,15 @@
-// Variables
+// ElMessage is called as a function, so its style is not auto-imported.
+@use 'element-plus/theme-chalk/src/message.scss' as *;
+
 $primary-color: #409eff;
 $secondary-color: #67c23a;
 
-// Reset
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-// Body styling
 body {
   font-family: 'Arial', sans-serif;
   color: #333;
@@ -22,7 +22,6 @@ body {
   min-height: 100vh;
 }
 
-// Buttons
 button {
   cursor: pointer;
   border: none;
