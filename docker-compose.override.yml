@@ -1,0 +1,64 @@
+# Local development layer, merged on top of docker-compose.yml automatically.
+# None of it belongs on a public host: the dashboard is unauthenticated, MailHog
+# swallows outbound mail, and the databases are published onto localhost.
+services:
+  traefik:
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080" # dashboard
+
+  postgres:
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+
+  minio:
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+
+  pgadmin:
+    image: dpage/pgadmin4:8.14
+    container_name: time-capsule-memories-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - time-capsule-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: "none"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.localhost`)"
+      - "traefik.http.routers.pgadmin.entrypoints=web"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: time-capsule-memories-mailhog
+    restart: unless-stopped
+    environment:
+      MH_STORAGE: maildir
+      MH_HTTP_BIND_ADDR: 0.0.0.0:8025
+      MH_SMTP_BIND_ADDR: 0.0.0.0:1025
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    volumes:
+      - mailhog_data:/MailHog/data
+    networks:
+      - time-capsule-network
+
+volumes:
+  pgadmin_data:
+  mailhog_data:
