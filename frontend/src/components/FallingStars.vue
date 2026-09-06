@@ -1,58 +1,56 @@
 <template>
-  <div class="falling-stars" v-show="active" aria-hidden="true">
+  <div v-show="active" class="falling-stars" aria-hidden="true">
     <div v-for="star in stars" :key="star.id" class="star" :style="star.style"></div>
   </div>
 </template>
 
-<script>
-let starIdCounter = 0;
+<script setup>
+import { onBeforeUnmount, ref } from 'vue';
 
-export default {
-  name: 'FallingStars',
-  props: {
-    starCount: {
-      type: Number,
-      default: 70,
-    },
-    duration: {
-      type: Number,
-      default: 3000, // in ms
-    },
-  },
-  data() {
-    return {
-      active: false,
-      stars: [],
-    };
-  },
-  methods: {
-    trigger() {
-      this.active = true;
-      this.generateStars();
+const props = defineProps({
+  starCount: { type: Number, default: 70 },
+  durationMs: { type: Number, default: 3000 },
+});
 
-      setTimeout(() => {
-        this.active = false;
-        this.$emit('finished');
-      }, this.duration);
+const emit = defineEmits(['finished']);
+
+const active = ref(false);
+const stars = ref([]);
+let timer = null;
+let nextStarId = 0;
+
+function randomStar() {
+  return {
+    id: nextStarId++,
+    style: {
+      left: `${Math.random() * 100}vw`,
+      top: '-10px',
+      width: `${Math.random() * 3 + 3}px`,
+      height: `${Math.random() * 4 + 5}px`,
+      opacity: Math.random() * 0.6 + 0.4,
+      backgroundColor: `hsl(${Math.random() * 360}, 100%, 85%)`,
+      animationDelay: `${Math.random()}s`,
+      animationDuration: `${Math.random() * 2 + 1.5}s`,
     },
-    generateStars() {
-      this.stars = Array.from({ length: this.starCount }).map(() => ({
-        id: starIdCounter++,
-        style: {
-          left: `${Math.random() * 100}vw`,
-          top: `-10px`,
-          width: `${Math.random() * 3 + 3}px`,
-          height: `${Math.random() * 4 + 5}px`,
-          opacity: Math.random() * 0.6 + 0.4,
-          boxShadow: `0 0 10px rgba(255, 255, 255, 1)`,
-          backgroundColor: `hsl(${Math.random() * 360}, 100%, 85%)`,
-          animationDelay: `${Math.random() * 1}s`,
-          animationDuration: `${Math.random() * 2 + 1.5}s`,
-        },
-      }));
-    },
-  },
-};
+  };
+}
+
+function trigger() {
+  clearTimeout(timer);
+  stars.value = Array.from({ length: props.starCount }, randomStar);
+  active.value = true;
+
+  timer = setTimeout(() => {
+    active.value = false;
+    stars.value = [];
+    emit('finished');
+  }, props.durationMs);
+}
+
+// The timer outlives the component if the user navigates away mid-animation.
+onBeforeUnmount(() => clearTimeout(timer));
+
+defineExpose({ trigger });
 </script>
 
 <style scoped>

@@ -1,18 +1,18 @@
 <template>
-  <navigation class="navigation-menu">
+  <nav class="navigation-menu">
     <router-link to="/" class="menu-item">
-      {{ $t('menu.home') }}
+      {{ t('menu.home') }}
     </router-link>
     <router-link to="/about" class="menu-item">
-      {{ $t('menu.about') }}
+      {{ t('menu.about') }}
     </router-link>
-  </navigation>
+  </nav>
 </template>
 
-<script>
-export default {
-  name: 'NavigationMenu',
-};
+<script setup>
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 </script>
 
 <style scoped>

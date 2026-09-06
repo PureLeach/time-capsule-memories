@@ -1,24 +1,21 @@
 <template>
   <main-layout>
     <section class="hero">
-      <h1>{{ $t('welcome.title') }}</h1>
-      <p>{{ $t('welcome.description') }}</p>
-      <transition name="fade" mode="out-in">
-        <start-button :to="'/form'" class="welcome-button" key="button">
-          {{ $t('welcome.buttonText') }}
-        </start-button>
-      </transition>
+      <h1>{{ t('welcome.title') }}</h1>
+      <p>{{ t('welcome.description') }}</p>
+      <start-button to="/form" class="welcome-button">
+        {{ t('welcome.buttonText') }}
+      </start-button>
     </section>
   </main-layout>
 </template>
 
-<script>
+<script setup>
+import { useI18n } from 'vue-i18n';
 import MainLayout from '@/layouts/MainLayout.vue';
 import StartButton from '@/components/StartButton.vue';
 
-export default {
-  components: { MainLayout, StartButton },
-};
+const { t } = useI18n();
 </script>
 
 <style scoped>

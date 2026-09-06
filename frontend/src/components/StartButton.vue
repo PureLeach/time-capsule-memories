@@ -1,51 +1,35 @@
 <template>
   <falling-stars ref="stars" />
-  <el-button type="primary" :to="to" @click="handleClick" class="start-button">
+  <el-button type="primary" class="start-button" @click="handleClick">
     <slot />
   </el-button>
 </template>
 
-<script>
-import { ref } from 'vue';
+<script setup>
+import { onBeforeUnmount, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import FallingStars from './FallingStars.vue';
 
-export default {
-  props: {
-    to: {
-      type: String,
-      required: true,
-    },
-    delay: {
-      type: Number,
-      default: 1500, // Default delay time
-    },
-  },
-  components: { FallingStars },
-  setup(props) {
-    const router = useRouter();
-    const stars = ref(null);
+const props = defineProps({
+  to: { type: String, required: true },
+  // Held back so the star animation plays before the route swaps the page.
+  delayMs: { type: Number, default: 1500 },
+});
 
-    const triggerStars = () => {
-      if (stars.value) stars.value.trigger();
-    };
+const router = useRouter();
+const stars = ref(null);
+let timer = null;
 
-    const navigate = () => {
-      setTimeout(() => router.push(props.to), props.delay);
-    };
+function handleClick() {
+  stars.value?.trigger();
+  clearTimeout(timer);
+  timer = setTimeout(() => router.push(props.to), props.delayMs);
+}
 
-    const handleClick = () => {
-      triggerStars();
-      navigate();
-    };
-
-    return { handleClick, stars };
-  },
-};
+onBeforeUnmount(() => clearTimeout(timer));
 </script>
 
 <style scoped>
-/* Main style for the button */
 .start-button {
   position: relative;
   padding: 20px 40px;
@@ -77,7 +61,6 @@ export default {
   opacity: 0.8;
 }
 
-/* Smooth hover effect */
 .start-button:hover {
   background: #333;
   box-shadow: 0 0 20px rgba(255, 255, 255, 1);

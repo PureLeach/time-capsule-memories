@@ -8,18 +8,16 @@
       <slot />
     </main>
     <footer class="main-footer">
-      <p>&copy; 2024 Time Capsule of Memories</p>
+      <p>&copy; {{ currentYear }} Time Capsule of Memories</p>
     </footer>
   </div>
 </template>
 
-<script>
+<script setup>
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 
-export default {
-  components: { NavigationMenu, LanguageSwitcher },
-};
+const currentYear = new Date().getFullYear();
 </script>
 
 <style scoped>

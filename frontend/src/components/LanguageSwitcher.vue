@@ -1,44 +1,42 @@
 <template>
-  <div class="language-switcher">
-    <div class="flag-container" :class="{ flipping: isFlipping }" @click="toggleLanguage">
+  <button type="button" class="language-switcher" :aria-label="switchLabel" @click="toggleLanguage">
+    <span class="flag-container" :class="{ flipping: isFlipping }">
       <img :src="flagSrc" :alt="flagAlt" class="flag" />
-    </div>
-  </div>
+    </span>
+  </button>
 </template>
 
-<script>
+<script setup>
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { ref, computed } from 'vue';
 import { useAppStore } from '@/store';
+import enFlag from '@/assets/flags/en.svg';
+import ruFlag from '@/assets/flags/ru.svg';
 
-export default {
-  name: 'LanguageSwitcher',
-  setup() {
-    const { locale } = useI18n();
-    const appStore = useAppStore();
-    const isFlipping = ref(false);
+const FLIP_MS = 300;
 
-    const flagSrc = computed(() =>
-      appStore.language === 'en'
-        ? new URL('@/assets/flags/en.svg', import.meta.url).href
-        : new URL('@/assets/flags/ru.svg', import.meta.url).href
-    );
+const { locale, t } = useI18n();
+const appStore = useAppStore();
+const isFlipping = ref(false);
+let timer = null;
 
-    const flagAlt = computed(() => (appStore.language === 'en' ? 'English' : 'Russian'));
+const isEnglish = computed(() => appStore.language === 'en');
+const flagSrc = computed(() => (isEnglish.value ? enFlag : ruFlag));
+const flagAlt = computed(() => (isEnglish.value ? 'English' : 'Русский'));
+const switchLabel = computed(() => t('menu.switchLanguage'));
 
-    const toggleLanguage = () => {
-      isFlipping.value = true;
-      setTimeout(() => {
-        const newLanguage = appStore.language === 'en' ? 'ru' : 'en';
-        appStore.setLanguage(newLanguage);
-        locale.value = newLanguage;
-        isFlipping.value = false;
-      }, 300);
-    };
+function toggleLanguage() {
+  isFlipping.value = true;
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    const next = isEnglish.value ? 'ru' : 'en';
+    appStore.setLanguage(next);
+    locale.value = next;
+    isFlipping.value = false;
+  }, FLIP_MS);
+}
 
-    return { isFlipping, flagSrc, flagAlt, toggleLanguage };
-  },
-};
+onBeforeUnmount(() => clearTimeout(timer));
 </script>
 
 <style scoped>
