@@ -1,3 +1,4 @@
+// Package database owns the Postgres connection pool.
 package database
 
 import (
@@ -14,8 +15,6 @@ import (
 const pingTimeout = 5 * time.Second
 
 func New(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
-	slog.Info("connecting to database", "host", cfg.DBHost, "database", cfg.DBName)
-
 	pool, err := pgxpool.New(ctx, cfg.PostgresURL)
 	if err != nil {
 		return nil, fmt.Errorf("create db pool: %w", err)
@@ -29,6 +28,10 @@ func New(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
-	slog.Info("database connection established")
+	// Logged from the parsed config, not the URL, which carries the password.
+	slog.Info("database connection established",
+		"host", pool.Config().ConnConfig.Host,
+		"database", pool.Config().ConnConfig.Database,
+	)
 	return pool, nil
 }
