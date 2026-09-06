@@ -9,15 +9,17 @@ import (
 	"time_capsule_memories/internal/models"
 )
 
+const revertTimeout = 5 * time.Second
+
 type CapsuleRepository interface {
 	Create(ctx context.Context, capsule *models.CreateCapsuleRequest) (*models.CapsuleResponse, error)
 	ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleResponse, error)
-	SetStatus(ctx context.Context, capsuleID int, status string) error
+	SetStatus(ctx context.Context, capsuleID int, status models.CapsuleStatus) error
 }
 
 type ObjectStore interface {
 	GetFilesInDirectory(ctx context.Context, directoryUUID string) ([]models.FileObject, error)
-	GeneratePresignedUploadURL(ctx context.Context, objectName string, expiration time.Duration) (string, error)
+	PresignUpload(ctx context.Context, directoryUUID, contentType string, expiration time.Duration) (*models.PresignedUpload, error)
 	Ping(ctx context.Context) error
 }
 
@@ -35,15 +37,11 @@ func NewCapsuleService(repo CapsuleRepository, store ObjectStore, mailer Mailer)
 	return &CapsuleService{repo: repo, store: store, mailer: mailer}
 }
 
+// Process delivers one claimed capsule. A failure before the mail leaves returns
+// the row to 'waiting' for the next tick; after it leaves the row is never
+// reverted, since a duplicate delivery is worse than a stuck row.
 func (s *CapsuleService) Process(ctx context.Context, capsule *models.CapsuleResponse) error {
 	slog.Info("processing capsule", "capsule_id", capsule.ID)
-
-	if *capsule.FilesFolderUUID != "" {
-		slog.Debug("capsule has attachments folder",
-			"capsule_id", capsule.ID,
-			"folder_uuid", *capsule.FilesFolderUUID,
-		)
-	}
 
 	attachments, err := s.store.GetFilesInDirectory(ctx, *capsule.FilesFolderUUID)
 	if err != nil {
@@ -52,22 +50,22 @@ func (s *CapsuleService) Process(ctx context.Context, capsule *models.CapsuleRes
 			"folder_uuid", *capsule.FilesFolderUUID,
 			"error", err,
 		)
-		s.revertToWaiting(ctx, capsule.ID, "minio_fetch")
-		return fmt.Errorf("error retrieving files from MinIO: %v", err)
+		s.revertToWaiting(ctx, capsule.ID, "object_store_fetch")
+		return fmt.Errorf("retrieve attachments: %w", err)
 	}
 
 	subject := fmt.Sprintf("You've received a time capsule from %s", capsule.SenderName)
 
 	if err := s.mailer.Send(ctx, subject, capsule.Message, capsule.RecipientEmail, attachments); err != nil {
 		s.revertToWaiting(ctx, capsule.ID, "smtp_send")
-		return fmt.Errorf("error sending email: %v", err)
+		return fmt.Errorf("send capsule email: %w", err)
 	}
 
-	if err := s.repo.SetStatus(ctx, capsule.ID, "done"); err != nil {
+	if err := s.repo.SetStatus(ctx, capsule.ID, models.StatusDone); err != nil {
 		slog.Error("capsule delivered but status update failed; row left in progress",
 			"capsule_id", capsule.ID, "error", err,
 		)
-		return fmt.Errorf("error updating capsule status: %v", err)
+		return fmt.Errorf("mark capsule done: %w", err)
 	}
 
 	slog.Info("capsule processing complete", "capsule_id", capsule.ID)
@@ -75,7 +73,12 @@ func (s *CapsuleService) Process(ctx context.Context, capsule *models.CapsuleRes
 }
 
 func (s *CapsuleService) revertToWaiting(ctx context.Context, capsuleID int, after string) {
-	if err := s.repo.SetStatus(ctx, capsuleID, "waiting"); err != nil {
+	// The parent may already be canceled by the dispatch timeout, which would
+	// leave the capsule stuck in progress.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), revertTimeout)
+	defer cancel()
+
+	if err := s.repo.SetStatus(ctx, capsuleID, models.StatusWaiting); err != nil {
 		slog.Error("failed to revert capsule to waiting; row stuck in progress",
 			"capsule_id", capsuleID,
 			"after", after,

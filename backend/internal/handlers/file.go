@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -9,47 +8,42 @@ import (
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/validators"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-// @Summary Generate a presigned URL for file upload
-// @Description Generates a presigned URL for uploading a file to a specific directory (UUID) in MinIO.
+// Short on purpose: the browser uses the form immediately, so a longer life
+// only widens the window for replaying a leaked URL.
+const uploadURLTTL = 5 * time.Minute
+
+// @Summary Generate a presigned upload target for an attachment
+// @Description Returns a signed multipart/form-data POST target scoped to one directory. The signed policy pins the content type and caps the upload at 5 MB, so the limits hold even if the client ignores them. Submit the returned fields verbatim, then the file part.
 // @Tags file
-// @Accept json
 // @Produce json
 // @Param directory query string true "Target directory UUID"
-// @Success 200 {object} models.PresignedURLResponse "Presigned URL generated successfully"
+// @Param content_type query string true "Image MIME type" Enums(image/jpeg, image/png, image/webp, image/gif)
+// @Success 200 {object} models.PresignedUpload "Upload target generated successfully"
 // @Failure 400 {object} models.ErrorResponse "Invalid request"
-// @Failure 500 {object} models.ErrorResponse "Failed to generate presigned URL"
+// @Failure 500 {object} models.ErrorResponse "Failed to generate upload target"
 // @Router /generate-presigned-url [get]
 func (h *Handler) GeneratePresignedURL(c echo.Context) error {
-	directory := c.QueryParam("directory")
 	req := models.GeneratePresignedURLRequest{
-		Directory: directory,
+		Directory:   c.QueryParam("directory"),
+		ContentType: c.QueryParam("content_type"),
 	}
 
-	if err := validators.ValidateGeneratePresignedURLRequest(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: "Validation error: " + err.Error(),
-		})
+	if err := validators.ValidateStruct(req); err != nil {
+		return badRequest(c, err.Error())
 	}
-
-	fileName := uuid.New().String()
 
 	ctx := c.Request().Context()
-	url, err := h.store.GeneratePresignedUploadURL(ctx, fmt.Sprintf("%s/%s", directory, fileName), time.Hour)
+	upload, err := h.store.PresignUpload(ctx, req.Directory, req.ContentType, uploadURLTTL)
 	if err != nil {
-		logging.FromContext(ctx).Error("failed to generate presigned URL",
-			"directory", directory,
+		logging.FromContext(ctx).Error("failed to presign upload",
+			"directory", req.Directory,
 			"error", err,
 		)
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Error: "Could not generate presigned URL",
-		})
+		return internalError(c, "Could not generate upload target")
 	}
 
-	return c.JSON(http.StatusOK, models.PresignedURLResponse{
-		PresignedURL: url,
-	})
+	return c.JSON(http.StatusOK, upload)
 }

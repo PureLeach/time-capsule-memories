@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"time_capsule_memories/internal/logging"
 	"time_capsule_memories/internal/models"
 	"time_capsule_memories/internal/validators"
 
@@ -10,7 +11,7 @@ import (
 )
 
 // @Summary Create a new capsule
-// @Description Creates a new time capsule with the given parameters
+// @Description Schedules a message, with optional attachments, for delivery on a future date.
 // @Tags capsules
 // @Accept json
 // @Produce json
@@ -23,23 +24,27 @@ func (h *Handler) CreateCapsule(c echo.Context) error {
 	var capsule models.CreateCapsuleRequest
 
 	if err := c.Bind(&capsule); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: "Invalid request payload: " + err.Error(),
-		})
+		return badRequest(c, "Invalid request payload")
 	}
 
-	if err := validators.ValidateCapsule(capsule); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
+	if err := validators.ValidateStruct(capsule); err != nil {
+		return badRequest(c, err.Error())
 	}
 
-	created, err := h.capsuleRepo.Create(c.Request().Context(), &capsule)
+	ctx := c.Request().Context()
+	created, err := h.capsuleRepo.Create(ctx, &capsule)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Error: "Could not create capsule",
-		})
+		logging.FromContext(ctx).Error("failed to create capsule", "error", err)
+		return internalError(c, "Could not create capsule")
 	}
 
 	return c.JSON(http.StatusCreated, created)
+}
+
+func badRequest(c echo.Context, message string) error {
+	return c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: message})
+}
+
+func internalError(c echo.Context, message string) error {
+	return c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: message})
 }

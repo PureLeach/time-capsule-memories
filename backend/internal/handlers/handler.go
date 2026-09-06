@@ -1,29 +1,38 @@
+// Package handlers implements the HTTP transport layer.
 package handlers
 
 import (
-	"time_capsule_memories/internal/repository"
-	"time_capsule_memories/internal/services"
+	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"time_capsule_memories/internal/models"
+	"time_capsule_memories/internal/services"
 )
 
+type pinger interface {
+	Ping(ctx context.Context) error
+}
+
+type feedbackCreator interface {
+	Create(ctx context.Context, feedback *models.CreateFeedbackRequest) (*models.FeedbackResponse, error)
+}
+
 type Handler struct {
-	pool         *pgxpool.Pool
+	db           pinger
 	store        services.ObjectStore
 	capsuleRepo  services.CapsuleRepository
-	feedbackRepo *repository.Feedback
+	feedbackRepo feedbackCreator
 	mailer       services.Mailer
 }
 
 func New(
-	pool *pgxpool.Pool,
+	db pinger,
 	store services.ObjectStore,
 	capsuleRepo services.CapsuleRepository,
-	feedbackRepo *repository.Feedback,
+	feedbackRepo feedbackCreator,
 	mailer services.Mailer,
 ) *Handler {
 	return &Handler{
-		pool:         pool,
+		db:           db,
 		store:        store,
 		capsuleRepo:  capsuleRepo,
 		feedbackRepo: feedbackRepo,

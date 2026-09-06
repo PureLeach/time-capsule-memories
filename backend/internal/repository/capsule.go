@@ -2,24 +2,10 @@ package repository
 
 import (
 	"context"
-	"log/slog"
-	"time"
+	"fmt"
 
 	"time_capsule_memories/internal/models"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
-
-const dbTimeout = 5 * time.Second
-
-// dbPool is the subset of *pgxpool.Pool that repositories use; pgxmock
-// satisfies it for tests.
-type dbPool interface {
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
-	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-}
 
 type Capsule struct {
 	pool dbPool
@@ -33,14 +19,13 @@ func (r *Capsule) Create(ctx context.Context, capsule *models.CreateCapsuleReque
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	query := `
+	const query = `
 	INSERT INTO capsules (sender_name, send_at, message, recipient_email, files_folder_UUID)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, sender_name, created_at, send_at, message, recipient_email, files_folder_UUID, status;
-    `
+	`
 
 	created := &models.CapsuleResponse{}
-
 	err := r.pool.QueryRow(
 		ctx,
 		query,
@@ -60,18 +45,19 @@ func (r *Capsule) Create(ctx context.Context, capsule *models.CreateCapsuleReque
 		&created.Status,
 	)
 	if err != nil {
-		slog.Error("failed to create capsule", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("insert capsule: %w", err)
 	}
 
 	return created, nil
 }
 
+// ClaimDue atomically moves up to limit due capsules to 'in progress'. SKIP
+// LOCKED lets several dispatchers run without both claiming the same row.
 func (r *Capsule) ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	query := `
+	const query = `
 	WITH due AS (
 	    SELECT id FROM capsules
 	    WHERE status = 'waiting' AND send_at < CURRENT_DATE + INTERVAL '1 day'
@@ -89,8 +75,7 @@ func (r *Capsule) ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleRes
 
 	rows, err := r.pool.Query(ctx, query, limit)
 	if err != nil {
-		slog.Error("failed to claim due capsules", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("claim due capsules: %w", err)
 	}
 	defer rows.Close()
 
@@ -107,37 +92,24 @@ func (r *Capsule) ClaimDue(ctx context.Context, limit int) ([]*models.CapsuleRes
 			&capsule.FilesFolderUUID,
 			&capsule.Status,
 		); err != nil {
-			slog.Error("failed to scan claimed capsule row", "error", err)
-			return nil, err
+			return nil, fmt.Errorf("scan claimed capsule: %w", err)
 		}
 		capsules = append(capsules, capsule)
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Error("failed to iterate claimed capsule rows", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("iterate claimed capsules: %w", err)
 	}
 
 	return capsules, nil
 }
 
-func (r *Capsule) SetStatus(ctx context.Context, capsuleID int, newStatus string) error {
+func (r *Capsule) SetStatus(ctx context.Context, capsuleID int, status models.CapsuleStatus) error {
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	_, err := r.pool.Exec(
-		ctx,
-		`UPDATE capsules SET status = $1 WHERE id = $2`,
-		newStatus,
-		capsuleID,
-	)
-	if err != nil {
-		slog.Error("failed to set capsule status",
-			"capsule_id", capsuleID,
-			"status", newStatus,
-			"error", err,
-		)
-		return err
+	if _, err := r.pool.Exec(ctx, `UPDATE capsules SET status = $1 WHERE id = $2`, status, capsuleID); err != nil {
+		return fmt.Errorf("set capsule %d status to %q: %w", capsuleID, status, err)
 	}
 
 	return nil

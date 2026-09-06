@@ -11,7 +11,7 @@ import (
 )
 
 // @Summary Submit user feedback
-// @Description Stores user feedback in the database
+// @Description Stores a free-form feedback message.
 // @Tags feedback
 // @Accept json
 // @Produce json
@@ -24,24 +24,18 @@ func (h *Handler) CreateFeedback(c echo.Context) error {
 	var feedback models.CreateFeedbackRequest
 
 	if err := c.Bind(&feedback); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: "Invalid request payload: " + err.Error(),
-		})
+		return badRequest(c, "Invalid request payload")
 	}
 
 	if err := validators.ValidateStruct(feedback); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: "Validation error: " + err.Error(),
-		})
+		return badRequest(c, err.Error())
 	}
 
 	ctx := c.Request().Context()
 	created, err := h.feedbackRepo.Create(ctx, &feedback)
 	if err != nil {
 		logging.FromContext(ctx).Error("failed to create feedback", "error", err)
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Error: "Failed to create feedback",
-		})
+		return internalError(c, "Could not save feedback")
 	}
 
 	return c.JSON(http.StatusCreated, created)

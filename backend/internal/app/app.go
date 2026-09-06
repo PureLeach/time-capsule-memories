@@ -1,3 +1,4 @@
+// Package app wires every component together and owns the process lifecycle.
 package app
 
 import (
@@ -14,10 +15,10 @@ import (
 	"time_capsule_memories/internal/jobs"
 	"time_capsule_memories/internal/logging"
 	appmw "time_capsule_memories/internal/middleware"
-	"time_capsule_memories/internal/minio_client"
 	"time_capsule_memories/internal/repository"
 	"time_capsule_memories/internal/routes"
 	"time_capsule_memories/internal/services"
+	"time_capsule_memories/internal/storage"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -28,13 +29,17 @@ import (
 )
 
 const (
-	httpAddr         = ":8000"
-	minioInitTimeout = 10 * time.Second
-	shutdownTimeout  = 30 * time.Second
+	httpAddr        = ":8000"
+	readHeaderLimit = 10 * time.Second
+	storageTimeout  = 10 * time.Second
+	shutdownTimeout = 30 * time.Second
+
+	// Generous next to the 4096-character message cap; attachments never pass
+	// through this service.
+	requestBodyLimit = "1M"
 )
 
 type App struct {
-	cfg  *config.Config
 	pool *pgxpool.Pool
 	cron *cron.Cron
 	echo *echo.Echo
@@ -43,7 +48,7 @@ type App struct {
 func New(ctx context.Context) (*App, error) {
 	cfg, err := config.Load()
 	if err != nil {
-		return nil, fmt.Errorf("load config: %w", err)
+		return nil, err
 	}
 	logging.Init(cfg.LogLevel)
 
@@ -52,12 +57,12 @@ func New(ctx context.Context) (*App, error) {
 		return nil, fmt.Errorf("init database: %w", err)
 	}
 
-	minioCtx, cancel := context.WithTimeout(ctx, minioInitTimeout)
+	storageCtx, cancel := context.WithTimeout(ctx, storageTimeout)
 	defer cancel()
-	store, err := minio_client.New(minioCtx, cfg)
+	store, err := storage.New(storageCtx, cfg)
 	if err != nil {
 		pool.Close()
-		return nil, fmt.Errorf("init minio: %w", err)
+		return nil, fmt.Errorf("init object store: %w", err)
 	}
 
 	capsuleRepo := repository.NewCapsule(pool)
@@ -74,36 +79,40 @@ func New(ctx context.Context) (*App, error) {
 
 	handler := handlers.New(pool, store, capsuleRepo, feedbackRepo, mailer)
 
-	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
-
-	// Order matters: request id first so every later layer can log it; recover
-	// next so panics in handlers don't bypass the access log; access log wraps
-	// the handler; body limit and CORS sit closest to the handler. Probes are
-	// excluded from the access log so they don't drown out real traffic.
-	e.Use(appmw.RequestID())
-	e.Use(appmw.Recover())
-	e.Use(appmw.AccessLog("/healthz", "/readyz"))
-	e.Use(middleware.BodyLimit("1M"))
-	e.Use(appmw.CORSConfig(cfg.CORSAllowedOrigins))
-
-	routes.RegisterHealthRoutes(e, handler)
-	routes.RegisterFileRoutes(e, handler)
-	routes.RegisterCapsuleRoutes(e, handler)
-	routes.RegisterFeedbackRoutes(e, handler)
-	routes.RegisterEmailRoutes(e, handler)
-
-	e.GET("/swagger/*", echoSwagger.WrapHandler)
-
 	return &App{
-		cfg:  cfg,
 		pool: pool,
 		cron: cronScheduler,
-		echo: e,
+		echo: newRouter(cfg, handler),
 	}, nil
 }
 
+func newRouter(cfg *config.Config, handler *handlers.Handler) *echo.Echo {
+	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+	e.Server.ReadHeaderTimeout = readHeaderLimit
+
+	// Order matters: request id first so later layers can log it, recover next
+	// so panics still reach the access log.
+	e.Use(appmw.RequestID())
+	e.Use(appmw.Recover())
+	e.Use(appmw.AccessLog("/healthz", "/readyz"))
+	e.Use(middleware.BodyLimit(requestBodyLimit))
+	e.Use(appmw.CORSConfig(cfg.CORSAllowedOrigins))
+
+	routes.Register(e, handler)
+	if cfg.EnableTestEmailEndpoint {
+		slog.Warn("test email endpoint enabled; it is unauthenticated and must not be exposed publicly")
+		routes.RegisterTestEmail(e, handler)
+	}
+
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
+
+	return e
+}
+
+// Run serves until ctx is canceled, then drains the scheduler so a capsule in
+// flight is not abandoned mid-delivery.
 func (a *App) Run(ctx context.Context) error {
 	defer a.pool.Close()
 

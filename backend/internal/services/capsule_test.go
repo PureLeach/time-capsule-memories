@@ -14,7 +14,7 @@ import (
 
 type statusCall struct {
 	id     int
-	status string
+	status models.CapsuleStatus
 }
 
 type fakeRepo struct {
@@ -30,7 +30,7 @@ func (f *fakeRepo) ClaimDue(_ context.Context, _ int) ([]*models.CapsuleResponse
 	return nil, nil
 }
 
-func (f *fakeRepo) SetStatus(_ context.Context, id int, status string) error {
+func (f *fakeRepo) SetStatus(_ context.Context, id int, status models.CapsuleStatus) error {
 	f.calls = append(f.calls, statusCall{id, status})
 	return f.setStatusErr
 }
@@ -44,8 +44,8 @@ func (f *fakeStore) GetFilesInDirectory(_ context.Context, _ string) ([]models.F
 	return f.files, f.err
 }
 
-func (f *fakeStore) GeneratePresignedUploadURL(_ context.Context, _ string, _ time.Duration) (string, error) {
-	return "", nil
+func (f *fakeStore) PresignUpload(_ context.Context, _, _ string, _ time.Duration) (*models.PresignedUpload, error) {
+	return &models.PresignedUpload{}, nil
 }
 
 func (f *fakeStore) Ping(_ context.Context) error { return nil }
@@ -69,7 +69,7 @@ func newCapsule() *models.CapsuleResponse {
 		Message:         "hello",
 		RecipientEmail:  "alice@example.com",
 		FilesFolderUUID: &folder,
-		Status:          "in progress",
+		Status:          models.StatusInProgress,
 	}
 }
 
@@ -81,7 +81,7 @@ func TestProcess_HappyPath(t *testing.T) {
 
 	require.NoError(t, svc.Process(context.Background(), newCapsule()))
 	require.Equal(t, 1, mailer.sent)
-	require.Equal(t, []statusCall{{42, "done"}}, repo.calls)
+	require.Equal(t, []statusCall{{42, models.StatusDone}}, repo.calls)
 }
 
 func TestProcess_MinioError_RevertsToWaiting(t *testing.T) {
@@ -92,7 +92,7 @@ func TestProcess_MinioError_RevertsToWaiting(t *testing.T) {
 
 	require.Error(t, svc.Process(context.Background(), newCapsule()))
 	require.Zero(t, mailer.sent)
-	require.Equal(t, []statusCall{{42, "waiting"}}, repo.calls)
+	require.Equal(t, []statusCall{{42, models.StatusWaiting}}, repo.calls)
 }
 
 func TestProcess_SMTPError_RevertsToWaiting(t *testing.T) {
@@ -103,7 +103,7 @@ func TestProcess_SMTPError_RevertsToWaiting(t *testing.T) {
 
 	require.Error(t, svc.Process(context.Background(), newCapsule()))
 	require.Equal(t, 1, mailer.sent)
-	require.Equal(t, []statusCall{{42, "waiting"}}, repo.calls)
+	require.Equal(t, []statusCall{{42, models.StatusWaiting}}, repo.calls)
 }
 
 func TestProcess_SetStatusErrorAfterSend_NoRevert(t *testing.T) {
@@ -114,5 +114,5 @@ func TestProcess_SetStatusErrorAfterSend_NoRevert(t *testing.T) {
 
 	require.Error(t, svc.Process(context.Background(), newCapsule()))
 	require.Equal(t, 1, mailer.sent)
-	require.Equal(t, []statusCall{{42, "done"}}, repo.calls)
+	require.Equal(t, []statusCall{{42, models.StatusDone}}, repo.calls)
 }

@@ -2,18 +2,16 @@ package repository
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 
 	"time_capsule_memories/internal/models"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Feedback struct {
-	pool *pgxpool.Pool
+	pool dbPool
 }
 
-func NewFeedback(pool *pgxpool.Pool) *Feedback {
+func NewFeedback(pool dbPool) *Feedback {
 	return &Feedback{pool: pool}
 }
 
@@ -21,26 +19,20 @@ func (r *Feedback) Create(ctx context.Context, feedback *models.CreateFeedbackRe
 	ctx, cancel := context.WithTimeout(ctx, dbTimeout)
 	defer cancel()
 
-	query := `
+	const query = `
 	INSERT INTO users_feedback (message)
 	VALUES ($1)
 	RETURNING id, created_at, message;
-    `
+	`
 
 	created := &models.FeedbackResponse{}
-
-	err := r.pool.QueryRow(
-		ctx,
-		query,
-		feedback.Message,
-	).Scan(
+	err := r.pool.QueryRow(ctx, query, feedback.Message).Scan(
 		&created.ID,
 		&created.CreatedAt,
 		&created.Message,
 	)
 	if err != nil {
-		slog.Error("failed to create feedback", "error", err)
-		return nil, err
+		return nil, fmt.Errorf("insert feedback: %w", err)
 	}
 
 	return created, nil

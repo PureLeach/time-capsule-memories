@@ -29,7 +29,9 @@ func (s *stubCapsuleRepo) ClaimDue(_ context.Context, _ int) ([]*models.CapsuleR
 	return nil, nil
 }
 
-func (s *stubCapsuleRepo) SetStatus(_ context.Context, _ int, _ string) error { return nil }
+func (s *stubCapsuleRepo) SetStatus(_ context.Context, _ int, _ models.CapsuleStatus) error {
+	return nil
+}
 
 func newCapsuleRequest(t *testing.T, body any) *http.Request {
 	t.Helper()
@@ -51,7 +53,7 @@ func TestCreateCapsule_Created(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	want := &models.CapsuleResponse{ID: 7, SenderName: "Alice", Status: "waiting"}
+	want := &models.CapsuleResponse{ID: 7, SenderName: "Alice", Status: models.StatusWaiting}
 	h := &Handler{capsuleRepo: &stubCapsuleRepo{created: want}}
 
 	require.NoError(t, h.CreateCapsule(c))

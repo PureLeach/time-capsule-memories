@@ -11,7 +11,7 @@ import (
 )
 
 // @Summary Send a test email
-// @Description Generates and sends a test email
+// @Description Development-only helper for verifying SMTP delivery end to end. Registered only when ENABLE_TEST_EMAIL_ENDPOINT is true, because it is unauthenticated and would otherwise let anyone send mail through the configured relay.
 // @Tags email
 // @Accept json
 // @Produce json
@@ -24,15 +24,11 @@ func (h *Handler) SendTestEmail(c echo.Context) error {
 	var emailData models.EmailDataRequest
 
 	if err := c.Bind(&emailData); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: "Invalid request payload: " + err.Error(),
-		})
+		return badRequest(c, "Invalid request payload")
 	}
 
 	if err := validators.ValidateStruct(emailData); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
-			Error: err.Error(),
-		})
+		return badRequest(c, err.Error())
 	}
 
 	ctx := c.Request().Context()
@@ -44,16 +40,12 @@ func (h *Handler) SendTestEmail(c echo.Context) error {
 			"folder_uuid", *emailData.FilesFolderUUID,
 			"error", err,
 		)
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Error: "Could not retrieve attachments",
-		})
+		return internalError(c, "Could not retrieve attachments")
 	}
 
 	if err := h.mailer.Send(ctx, emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {
-		log.Error("failed to send email", "error", err)
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-			Error: "Could not send email",
-		})
+		log.Error("failed to send test email", "error", err)
+		return internalError(c, "Could not send email")
 	}
 
 	return c.NoContent(http.StatusNoContent)
