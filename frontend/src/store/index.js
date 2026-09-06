@@ -1,18 +1,35 @@
 import { defineStore } from 'pinia';
 
+export const SUPPORTED_LANGUAGES = ['en', 'ru'];
+const DEFAULT_LANGUAGE = 'en';
+const STORAGE_KEY = 'language';
+
+// localStorage throws when cookies are blocked; the app should still work,
+// just without remembering the choice.
+function readStoredLanguage() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return SUPPORTED_LANGUAGES.includes(stored) ? stored : DEFAULT_LANGUAGE;
+  } catch {
+    return DEFAULT_LANGUAGE;
+  }
+}
+
 export const useAppStore = defineStore('app', {
   state: () => ({
-    language: localStorage.getItem('language') || 'en',
+    language: readStoredLanguage(),
   }),
 
   actions: {
-    setLanguage(lang) {
-      this.language = lang;
-      localStorage.setItem('language', lang);
-    },
-  },
+    setLanguage(language) {
+      if (!SUPPORTED_LANGUAGES.includes(language)) return;
 
-  getters: {
-    currentLanguage: (state) => state.language,
+      this.language = language;
+      try {
+        localStorage.setItem(STORAGE_KEY, language);
+      } catch {
+        // Preference is kept for this session only.
+      }
+    },
   },
 });

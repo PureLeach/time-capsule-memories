@@ -1,63 +1,58 @@
 {
-    "welcome": {
-      "title": "Time Capsule of Memories",
-      "description": "Send your memories to the future",
-      "buttonText": "Start"
-    },
-    "menu": {
-      "home": "Main page",
-      "about": "About site"
+  "pageTitles": {
+    "home": "Home",
+    "form": "Create a capsule",
+    "about": "About the project"
+  },
+  "welcome": {
+    "title": "Time Capsule of Memories",
+    "description": "Send your memories to the future",
+    "buttonText": "Start"
+  },
+  "menu": {
+    "home": "Main page",
+    "about": "About site",
+    "switchLanguage": "Switch language"
+  },
+  "form": {
+    "senderName": "Sender's Name",
+    "deliveryDate": "Delivery Date",
+    "message": "Message",
+    "recipientEmail": "Recipient's Email",
+    "attachments": "Attach images",
+    "pickDate": "Pick a date",
+    "namePlaceholder": "Enter your name",
+    "nameRequired": "Name required",
+    "messageRequired": "Message required",
+    "dateRequired": "Date required",
+    "emailRequired": "Email required",
+    "invalidEmail": "Invalid email",
+    "submit": "Submit",
+    "reset": "Reset",
+    "submitSuccess": "Your capsule is on its way to the future",
+    "uploadFileTypeError": "Only image files are allowed",
+    "uploadFileSizeError": "The file size exceeds the 5 MB limit",
+    "uploadLimitExceeded": "You can upload up to {count} files",
+    "uploadFailed": "The image could not be uploaded. Please try again"
+  },
+  "about": {
+    "title": "About the Project",
+    "description": "This project is a time capsule for your memories. Send memories to yourself and your loved ones in the future!",
+    "spoiler": {
+      "open": "More info",
+      "close": "Hide info",
+      "text": "This site is a pet project developed by Maxim Barannikov (tg:@PureLeach). The goal was to go through every stage of building a web application single-handedly: design, code, frontend and backend integration, and deployment.\n\nSince it was built alone with limited time, bugs may show up. If you notice one, please report it through the feedback form — it helps me make the project better. Any feedback and suggestions are welcome.\n\nThe full source code is publicly available on <a href='https://github.com/MaxBarannikov/time-capsule-memories' target='_blank' rel='noopener noreferrer' style='color: yellow;'>GitHub</a>. Thank you for your attention and support!"
     },
     "form": {
-      "senderName": "Sender's Name",
-      "deliveryDate": "Delivery Date",
-      "message": "Message",
-      "recipientEmail": "Recipient's Email",
-      "attachments": "Attach images",
-      "pickDate": "Pick a date",
-      
-      "namePlaceholder": "Enter your name",
-
-      "nameRequired": "Name required",
-      "messageRequired": "Message required",
-      "dateRequired": "Date required",
-      "emailRequired": "Email required",
-      "invalidEmail": "Invalid email",
-
-      "submit": "Submit",
-      "reset": "Reset",
-
-      "uploadFileTypeError": "Only image files are allowed",
-      "uploadFileSizeError": "The file size exceeds the 5 MB limit",
-      "uploadLimitExceeded": "You can upload up to 3 files"
+      "label": "Your thoughts and wishes:",
+      "placeholder": "Write your message here...",
+      "submit": "Send",
+      "emptyMessage": "Please enter a message"
     },
-
-      "about": {
-        "title": "About the Project",
-        "description": "This project is a time capsule for your memories. Send memories to yourself and your loved ones in the future!",
-        
-        "spoiler": {
-          "open": "More info",
-          "close": "Hide info",
-          "text": "This site is a pet project developed by Barannikov Maxim (tg:@PureLeach). The main goal of the project is to independently go through all stages of web application development: from design and code writing to frontend and backend integration and successful deployment to hosting.\n\nSince the project was developed alone with limited resources and time, bugs may occur on the site. If you notice bugs, please report them through the feedback form - it will help me to make the project better. Also I will be glad to receive any feedback and suggestions for improvement.\n\nThe source code for the entire application is publicly available at <a href='https://github.com/PureLeach/time-capsule-memories' target='_blank' style='color: yellow;'>GitHub</a>. Thank you for your attention and support!"
-        },
-
-        "form": {
-          "label": "Your thoughts and wishes:",
-          "placeholder": "Write your message here...",
-          "submit": "Send"
-        },
-
-        "modal": {
-          "title": "Your feedback has been submitted!",
-          "message": "Thank you for your feedback.",
-          "button": "Go to main page",
-
-          "errorTitle": "Error",
-          "errorMessage": "Please enter a message",
-          "errorButton": "Close"
-        }
-      }
-    
+    "modal": {
+      "title": "Your feedback has been submitted!",
+      "message": "Thank you for your feedback.",
+      "button": "Go to main page"
+    }
   }
-  
+}

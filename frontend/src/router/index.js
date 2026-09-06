@@ -1,25 +1,32 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-const HomePage = () => import('@/pages/HomePage.vue');
-const AboutPage = () => import('@/pages/AboutPage.vue');
-const FormPage = () => import('@/pages/FormPage.vue');
-
 const routes = [
-  { path: '/', name: 'Home', component: HomePage, meta: { title: 'Home Page' } },
-  { path: '/form', name: 'Form', component: FormPage, meta: { title: 'Form Page' } },
-  { path: '/about', name: 'About', component: AboutPage, meta: { title: 'About Us' } },
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('@/pages/HomePage.vue'),
+    meta: { titleKey: 'pageTitles.home' },
+  },
+  {
+    path: '/form',
+    name: 'form',
+    component: () => import('@/pages/FormPage.vue'),
+    meta: { titleKey: 'pageTitles.form' },
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: () => import('@/pages/AboutPage.vue'),
+    meta: { titleKey: 'pageTitles.about' },
+  },
+  // A typo or a stale link, not a page.
+  { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
 ];
 
-export const router = createRouter({
+const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
-    return savedPosition || { top: 0 };
-  },
-});
-
-router.beforeEach((to) => {
-  document.title = to.meta.title || 'Time Capsule Memories';
+  scrollBehavior: (to, from, savedPosition) => savedPosition || { top: 0 },
 });
 
 export default router;

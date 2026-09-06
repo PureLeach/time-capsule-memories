@@ -2,119 +2,87 @@
   <main-layout>
     <div class="about-page">
       <div class="about-form-container">
-        <h1 class="about-title">{{ $t('about.title') }}</h1>
-        <p class="about-description">{{ $t('about.description') }}</p>
+        <h1 class="about-title">{{ t('about.title') }}</h1>
+        <p class="about-description">{{ t('about.description') }}</p>
 
-        <!-- Спойлер -->
         <div class="spoiler">
-          <button @click="toggleSpoiler" class="spoiler-button">
-            <span>{{ isOpen ? $t('about.spoiler.close') : $t('about.spoiler.open') }}</span>
+          <button type="button" class="spoiler-button" @click="isOpen = !isOpen">
+            <span>{{ isOpen ? t('about.spoiler.close') : t('about.spoiler.open') }}</span>
           </button>
-          <transition name="fade" @before-enter="beforeEnter" @enter="enter" @leave="leave">
-            <div v-if="isOpen" class="spoiler-content">
-              <!-- Using v-html for HTML rendering -->
-              <p v-html="$t('about.spoiler.text')"></p>
-            </div>
+          <transition name="spoiler-content">
+            <!-- Safe: the copy is authored in this repo, no user input reaches it. -->
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <p v-if="isOpen" class="spoiler-content" v-html="t('about.spoiler.text')"></p>
           </transition>
         </div>
 
         <form class="about-form" @submit.prevent="handleSubmit">
-          <label for="message" class="form-label">{{ $t('about.form.label') }}</label>
+          <label for="feedback-message" class="form-label">{{ t('about.form.label') }}</label>
           <textarea
-            id="message"
+            id="feedback-message"
+            v-model="message"
             class="form-textarea"
             rows="5"
-            v-model="message"
-            :placeholder="$t('about.form.placeholder')"
+            maxlength="4096"
+            :placeholder="t('about.form.placeholder')"
           ></textarea>
-          <button type="submit" class="form-button">{{ $t('about.form.submit') }}</button>
+          <button type="submit" class="form-button" :disabled="isSubmitting">
+            {{ t('about.form.submit') }}
+          </button>
         </form>
       </div>
     </div>
 
-    <!-- Pop-up window for successful sending -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
-        <h2 class="modal-title">{{ $t('about.modal.title') }}</h2>
-        <p class="modal-message">{{ $t('about.modal.message') }}</p>
-        <button @click="redirectHome(true)" class="modal-button">
-          {{ $t('about.modal.button') }}
-        </button>
-      </div>
-    </div>
-
-    <!-- A pop-up window for an error -->
-    <div v-if="showErrorModal" class="modal">
-      <div class="modal-content">
-        <h2 class="modal-title">{{ $t('about.modal.errorTitle') }}</h2>
-        <p class="modal-message">{{ $t('about.modal.errorMessage') }}</p>
-        <button @click="redirectHome(false)" class="modal-button">
-          {{ $t('about.modal.errorButton') }}
+        <h2 class="modal-title">{{ t('about.modal.title') }}</h2>
+        <p class="modal-message">{{ t('about.modal.message') }}</p>
+        <button type="button" class="modal-button" @click="goHome">
+          {{ t('about.modal.button') }}
         </button>
       </div>
     </div>
   </main-layout>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue';
+import { ElMessage } from 'element-plus';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import MainLayout from '@/layouts/MainLayout.vue';
 import { submitFeedback } from '@/api/feedback';
 
-export default {
-  name: 'AboutPage',
-  components: {
-    MainLayout,
-  },
-  data() {
-    return {
-      isOpen: false,
-      message: '',
-      showModal: false,
-      showErrorModal: false,
-    };
-  },
-  methods: {
-    toggleSpoiler() {
-      this.isOpen = !this.isOpen;
-    },
-    beforeEnter(el) {
-      el.style.opacity = 0;
-      el.style.transform = 'translateY(-10px)';
-    },
-    enter(el, done) {
-      el.offsetHeight;
-      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-      el.style.opacity = 1;
-      el.style.transform = 'translateY(0)';
-      done();
-    },
-    leave(el, done) {
-      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-      el.style.opacity = 0;
-      el.style.transform = 'translateY(-10px)';
-      done();
-    },
-    async handleSubmit() {
-      if (!this.message.trim()) {
-        this.showErrorModal = true;
-        return;
-      }
-      try {
-        await submitFeedback({ message: this.message });
-        this.showModal = true;
-      } catch (error) {
-        this.$message.error(error.message);
-      }
-    },
-    redirectHome(isSuccess) {
-      if (isSuccess) {
-        this.$router.push('/');
-      }
-      this.showModal = false;
-      this.showErrorModal = false;
-    },
-  },
-};
+const { t } = useI18n();
+const router = useRouter();
+
+const isOpen = ref(false);
+const message = ref('');
+const isSubmitting = ref(false);
+const showModal = ref(false);
+
+async function handleSubmit() {
+  if (!message.value.trim()) {
+    ElMessage.warning(t('about.form.emptyMessage'));
+    return;
+  }
+
+  isSubmitting.value = true;
+  try {
+    await submitFeedback({ message: message.value });
+    message.value = '';
+    showModal.value = true;
+  } catch (error) {
+    ElMessage.error(error.message);
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+
+function goHome() {
+  showModal.value = false;
+  router.push('/');
+}
 </script>
 
 <style scoped>
@@ -184,7 +152,6 @@ export default {
   content: '';
   position: absolute;
   left: -5px;
-  /* Moves the arrow to the left */
   top: 30%;
   transform: translateY(-50%);
   width: 10px;
@@ -213,9 +180,7 @@ export default {
   font-size: 1rem;
   line-height: 1.5;
   width: 100%;
-  /* Make sure that the spoiler content will stretch to its full available width. */
   box-sizing: border-box;
-  /* So that the paddings do not violate the size */
 }
 
 .spoiler-content-enter-active,
@@ -286,7 +251,6 @@ export default {
   background-position: 100% 0;
 }
 
-/* The style for the modal window */
 .modal {
   position: fixed;
   top: 0;

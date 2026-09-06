@@ -4,31 +4,26 @@ import en from './en.json';
 import ru from './ru.json';
 import { useAppStore } from '@/store';
 
-const locales = { en, ru };
-
-// Создаем экземпляр vue-i18n с Composition API (non-legacy)
 const i18n = createI18n({
   legacy: false,
   globalInjection: true,
   locale: 'en',
   fallbackLocale: 'en',
-  messages: locales,
+  messages: { en, ru },
 });
 
-// Функция для инициализации и синхронизации с Pinia
+// Must run after the Pinia plugin is installed.
 export function initializeLanguage() {
   const appStore = useAppStore();
-  const storedLanguage = localStorage.getItem('language') || appStore.language;
 
-  // Устанавливаем локаль при инициализации
-  i18n.global.locale.value = storedLanguage;
-
-  // Смотрим за изменениями свойства language и обновляем i18n на лету
+  i18n.global.locale.value = appStore.language;
   watch(
     () => appStore.language,
-    (newLang) => {
-      i18n.global.locale.value = newLang;
-    }
+    (language) => {
+      i18n.global.locale.value = language;
+      document.documentElement.lang = language;
+    },
+    { immediate: true }
   );
 }
 
