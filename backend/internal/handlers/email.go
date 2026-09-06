@@ -34,13 +34,17 @@ func (h *Handler) SendTestEmail(c echo.Context) error {
 	ctx := c.Request().Context()
 	log := logging.FromContext(ctx)
 
-	attachments, err := h.store.GetFilesInDirectory(ctx, *emailData.FilesFolderUUID)
-	if err != nil {
-		log.Error("failed to get files from directory",
-			"folder_uuid", *emailData.FilesFolderUUID,
-			"error", err,
-		)
-		return internalError(c, "Could not retrieve attachments")
+	var attachments []models.FileObject
+	if emailData.FilesFolderUUID != nil && *emailData.FilesFolderUUID != "" {
+		files, err := h.store.GetFilesInDirectory(ctx, *emailData.FilesFolderUUID)
+		if err != nil {
+			log.Error("failed to get files from directory",
+				"folder_uuid", *emailData.FilesFolderUUID,
+				"error", err,
+			)
+			return internalError(c, "Could not retrieve attachments")
+		}
+		attachments = files
 	}
 
 	if err := h.mailer.Send(ctx, emailData.Subject, emailData.Body, emailData.RecipientEmail, attachments); err != nil {

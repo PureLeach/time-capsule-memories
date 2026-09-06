@@ -38,9 +38,11 @@ func (f *fakeRepo) SetStatus(_ context.Context, id int, status models.CapsuleSta
 type fakeStore struct {
 	files []models.FileObject
 	err   error
+	calls int
 }
 
 func (f *fakeStore) GetFilesInDirectory(_ context.Context, _ string) ([]models.FileObject, error) {
+	f.calls++
 	return f.files, f.err
 }
 
@@ -115,4 +117,31 @@ func TestProcess_SetStatusErrorAfterSend_NoRevert(t *testing.T) {
 	require.Error(t, svc.Process(context.Background(), newCapsule()))
 	require.Equal(t, 1, mailer.sent)
 	require.Equal(t, []statusCall{{42, models.StatusDone}}, repo.calls)
+}
+
+// Regression: dereferencing the nil folder pointer used to panic inside the
+// dispatcher goroutine, taking the process down.
+func TestProcess_NoAttachmentsFolder_SkipsObjectStore(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		folder *string
+	}{
+		{name: "nil pointer"},
+		{name: "empty string", folder: new(string)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &fakeRepo{}
+			store := &fakeStore{}
+			mailer := &fakeMailer{}
+			svc := services.NewCapsuleService(repo, store, mailer)
+
+			capsule := newCapsule()
+			capsule.FilesFolderUUID = tc.folder
+
+			require.NoError(t, svc.Process(context.Background(), capsule))
+			require.Zero(t, store.calls, "object store must not be queried without a folder")
+			require.Equal(t, 1, mailer.sent)
+			require.Equal(t, []statusCall{{42, models.StatusDone}}, repo.calls)
+		})
+	}
 }

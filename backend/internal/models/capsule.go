@@ -29,3 +29,11 @@ type CapsuleResponse struct {
 	FilesFolderUUID *string       `json:"files_folder_uuid"`
 	Status          CapsuleStatus `json:"status"`
 }
+
+// AttachmentsFolder reports false when the capsule was created without attachments.
+func (c *CapsuleResponse) AttachmentsFolder() (string, bool) {
+	if c.FilesFolderUUID == nil || *c.FilesFolderUUID == "" {
+		return "", false
+	}
+	return *c.FilesFolderUUID, true
+}

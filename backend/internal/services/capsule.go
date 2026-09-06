@@ -43,15 +43,19 @@ func NewCapsuleService(repo CapsuleRepository, store ObjectStore, mailer Mailer)
 func (s *CapsuleService) Process(ctx context.Context, capsule *models.CapsuleResponse) error {
 	slog.Info("processing capsule", "capsule_id", capsule.ID)
 
-	attachments, err := s.store.GetFilesInDirectory(ctx, *capsule.FilesFolderUUID)
-	if err != nil {
-		slog.Error("failed to retrieve capsule attachments",
-			"capsule_id", capsule.ID,
-			"folder_uuid", *capsule.FilesFolderUUID,
-			"error", err,
-		)
-		s.revertToWaiting(ctx, capsule.ID, "object_store_fetch")
-		return fmt.Errorf("retrieve attachments: %w", err)
+	var attachments []models.FileObject
+	if folder, ok := capsule.AttachmentsFolder(); ok {
+		files, err := s.store.GetFilesInDirectory(ctx, folder)
+		if err != nil {
+			slog.Error("failed to retrieve capsule attachments",
+				"capsule_id", capsule.ID,
+				"folder_uuid", folder,
+				"error", err,
+			)
+			s.revertToWaiting(ctx, capsule.ID, "object_store_fetch")
+			return fmt.Errorf("retrieve attachments: %w", err)
+		}
+		attachments = files
 	}
 
 	subject := fmt.Sprintf("You've received a time capsule from %s", capsule.SenderName)
